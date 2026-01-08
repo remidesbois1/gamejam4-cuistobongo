@@ -4,32 +4,32 @@
 # - LES CHAMPS OBLIGATOIRES SONT INDIQUÉS PAR [!]
 # - NE SUPPRIMEZ PAS LES CHAMPS VIDES laissez par exemple,    abstract: "" 
 # ----------------------------------
-title: "[!] Title of your game"  # Le titre tel qu'il apparaîtra lors de la présentation
-abstract: "In this game, you play as a hero who must save the world from impending doom." # Résumé de votre jeu
-team:  "[!] Name of your dev team"  # Le nom de votre équipe tel qu'il apparaîtra à la présentation
-motto: "Yeah, well, you know, that's just, like, your opinion, man." # Le slogan de votre équipe
+title: ""  # Le titre tel qu'il apparaîtra lors de la présentation
+abstract: "" # Résumé de votre jeu
+team:  "La Team Bamboo"  # Le nom de votre équipe tel qu'il apparaîtra à la présentation
+motto: "Mondher Chérif 2027 !" # Le slogan de votre équipe
 members:  # Liste des membres de l'équipe (ajoutez un bloc par membre)
   # --- Premier membre ---
-  - firstname: "[!] First Name"   # Prénom
-    lastname: "[!] Last Name"     # Nom
-    nickname: "Nickname"          # Pseudo
-    group: "[!] INF_Sx_yZ"        # Groupe de TP (Ex : INF_S2_3A)
-    bestgame: "Target Renegade"   # Jeu préféré de tous les temps
-    momentgame: "Jupyter"         # Jeu préféré du moment
-    ostgame: "Save The Poulettes" # Bande son / musique de jeu vidéo préférée
-    character: "Fruity Franck"    # Personnage de jeu vidéo préféré
+  - firstname: "Tristan"   # Prénom
+    lastname:  "Sauvage"    # Nom
+    nickname: "DoyDoy Diovannah"          # Pseudo
+    group: "INF_S5_1A"        # Groupe de TP (Ex : INF_S2_3A)
+    bestgame: "Minecraft moddé"   # Jeu préféré de tous les temps
+    momentgame: "Forager / Resident Evil 4"         # Jeu préféré du moment
+    ostgame: "gusty garden galaxy (Mario galaxy 2)" # Bande son / musique de jeu vidéo préférée
+    character: "goomba"    # Personnage de jeu vidéo préféré
   # --- Deuxième membre ---
-  - firstname: "[!]First Name"             # Prénom
-    lastname: "[!]Last Name"               # Nom
-    nickname: "Nickname"                   # Pseudo
-    group: "[!]INF_Sx_yZ"                  # Groupe de TP (Ex : INF_S4_2B)
-    bestgame: "Frogger"                    # Jeu préféré de tous les temps
-    momentgame: "Didier Gillard Simulator" # Jeu préféré du moment
-    ostgame: "Arkanoid Ending theme"       # Bande son / musique de jeu vidéo préférée
-    character: "The square"                # Personnage préféré
-engine: "Unity" # Moteur de jeu utilisé (exemples : "Pygame" "Phaser" "Godot" "Unity" "Unreal" "Custom/Python" "Custom/Javascript")
+  - firstname: "Rémi"             # Prénom
+    lastname: "Semenzin"               # Nom
+    nickname: "Semenzini Bananini"                   # Pseudo
+    group: "INF_S5_1A"                  # Groupe de TP (Ex : INF_S4_2B)
+    bestgame: "Minecraft"                    # Jeu préféré de tous les temps
+    momentgame: "Valorant" # Jeu préféré du moment
+    ostgame: "Beneath the mask (Persona 5)"     # Bande son / musique de jeu vidéo préférée
+    character: "JackassParow"                # Personnage préféré
+engine: "Pygame" # Moteur de jeu utilisé (exemples : "Pygame" "Phaser" "Godot" "Unity" "Unreal" "Custom/Python" "Custom/Javascript")
 credits:
-  - audio: "self production"                          # Audio
-  - graphics: "self production"                       # Graphismes
-  - thanks: "My friends, my family, and Eric Cantona" # Remerciements
-message: "?" # Information ou message à ajouter, et qui ne correspondait à aucun item de ce template
+  - audio: ""                          # Audio
+  - graphics: ""                       # Graphismes
+  - thanks: "" # Remerciements
+message: "Désolé du retard" # Information ou message à ajouter, et qui ne correspondait à aucun item de ce template
