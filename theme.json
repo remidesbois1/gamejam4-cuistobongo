@@ -1,0 +1,20 @@
+{
+    "#main_title": {
+        "font": {
+            "name": "fira_code",
+            "size": "48",
+            "bold": "1"
+        },
+        "colours": {
+            "normal_text": "#FFD700"
+        }
+    },
+    "button": {
+        "colours": {
+            "normal_bg": "#2c3e50",
+            "hovered_bg": "#34495e",
+            "active_bg": "#1abc9c",
+            "normal_text": "#ecf0f1"
+        }
+    }
+}
