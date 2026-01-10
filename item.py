@@ -1,50 +1,41 @@
-import pygame
-import random
+import pygame, random, math
 
 class Item:
-    def __init__(self, x, y, image_path, size=32, max_health=None):
-        self.size = size
-        self.rect = pygame.Rect(x, y, self.size, self.size)
-        try:
-            self.image = pygame.transform.scale(pygame.image.load(image_path).convert_alpha(), (self.size, self.size))
-        except:
-            self.image = None
-        self.max_health = max_health
-        self.health = max_health
+    def __init__(self, x, y, image_path, w=32, h=32):
+        self.w, self.h, self.rect = w, h, pygame.Rect(x, y, w, h)
+        try: self.image = pygame.transform.scale(pygame.image.load(image_path).convert_alpha(), (w, h))
+        except: self.image = None
+    def draw(self, surf, ox, oy):
+        pos = (self.rect.x - ox, self.rect.y - oy)
+        if self.image: surf.blit(self.image, pos)
+        else: pygame.draw.rect(surf, (200, 200, 200), (pos[0], pos[1], self.w, self.h))
 
-    def take_damage(self, amount):
-        if self.health is not None:
-            self.health -= amount
-            return self.health <= 0
-        return True
+class Resource(Item):
+    def __init__(self, x, y, image_path, w, h, max_health, drop_type):
+        super().__init__(x, y, image_path, w, h)
+        self.max_health, self.health, self.drop_type = max_health, max_health, drop_type
+    def take_damage(self, amount): self.health -= amount; return self.health <= 0
+    def draw(self, surf, ox, oy):
+        super().draw(surf, ox, oy)
+        if self.health < self.max_health:
+            pos = (self.rect.x - ox, self.rect.y - oy)
+            pygame.draw.rect(surf, (50, 0, 0), (pos[0], pos[1] + self.h + 5, self.w, 8))
+            pygame.draw.rect(surf, (255, 0, 0), (pos[0], pos[1] + self.h + 5, int(self.w * (self.health / self.max_health)), 8))
 
-    def draw(self, surface, offset_x, offset_y):
-        pos = (self.rect.x - offset_x, self.rect.y - offset_y)
-        if self.image:
-            surface.blit(self.image, pos)
-        else:
-            pygame.draw.rect(surface, (200, 200, 200), (pos[0], pos[1], self.size, self.size))
-        
-        if self.health is not None and self.health < self.max_health:
-            pygame.draw.rect(surface, (50, 0, 0), (pos[0], pos[1] + self.size + 5, self.size, 8))
-            pygame.draw.rect(surface, (255, 0, 0), (pos[0], pos[1] + self.size + 5, int(self.size * (self.health / self.max_health)), 8))
+class Tomato(Resource):
+    def __init__(self, x, y): super().__init__(x, y, "assets/tomato.png", 54, 54, 1, "tomato")
+class CheeseOre(Resource):
+    def __init__(self, x, y): super().__init__(x, y, random.choice(["assets/fromage_ore1.png", "assets/fromage_ore2.png"]), 72, 72, 3, "cheese")
+class Tree(Resource):
+    def __init__(self, x, y): super().__init__(x, y, "assets/tree.png", 80, 120, 4, "dough")
 
-class Tomato(Item):
-    def __init__(self, x, y):
-        super().__init__(x, y, "assets/tomato.png", 54)
-        self.type = "tomato"
-
-class CheeseOre(Item):
-    def __init__(self, x, y):
-        super().__init__(x, y, random.choice(["assets/fromage_ore1.png", "assets/fromage_ore2.png"]), 72, 3)
-        self.type = "cheese"
-
-class Dough(Item):
-    def __init__(self, x, y):
-        super().__init__(x, y, "assets/dough.png", 72, 2)
-        self.type = "dough"
+class Drop(Item):
+    PATHS = {"tomato": "assets/tomato-icon.png", "cheese": "assets/fromage-icon.png", "dough": "assets/dough.png"}
+    def __init__(self, x, y, drop_type): super().__init__(x, y, self.PATHS.get(drop_type, ""), 40, 40); self.type = drop_type
+    def draw(self, surf, ox, oy):
+        pos = (self.rect.x - ox, self.rect.y - oy + math.sin(pygame.time.get_ticks() * 0.005) * 10)
+        if self.image: surf.blit(self.image, pos)
+        else: pygame.draw.circle(surf, (255, 255, 255), (int(pos[0] + 20), int(pos[1] + 20)), 15)
 
 class DrumItem(Item):
-    def __init__(self, x, y):
-        super().__init__(x, y, "assets/drum.png", 64)
-        self.type = "drum_weapon"
+    def __init__(self, x, y): super().__init__(x, y, "assets/drum.png", 64, 64); self.type = "drum_weapon"

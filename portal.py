@@ -3,7 +3,7 @@ from item import Item
 
 class Portal(Item):
     def __init__(self, x, y):
-        super().__init__(x, y, "assets/portal.png", 128)
+        super().__init__(x, y, "assets/portal.png", 128, 128)
         self.angle = 0
         self.orig = self.image
         

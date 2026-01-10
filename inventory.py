@@ -1,7 +1,6 @@
 class Inventory:
     def __init__(self, cap=2):
-        self.cap = cap
-        self.counts = {"cheese": 2, "tomato": 2, "dough": 2}
+        self.cap, self.counts = cap, {"cheese": 0, "tomato": 0, "dough": 0}
 
     def add_item(self, t):
         if self.counts[t] < self.cap:
