@@ -43,7 +43,6 @@ class ShopMenu:
                 if game.pizzas_made >= up.cost:
                     game.pizzas_made -= up.cost
                     up.apply(game)
-                    # Replace with a new one not currently active
                     others = [u for u in self.pool if u not in self.active]
                     if others: self.active[self.idx] = random.choice(others)
 

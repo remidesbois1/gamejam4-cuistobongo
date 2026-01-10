@@ -9,7 +9,7 @@ class ResourceManager:
     def spawn(self, safe_func, w, h):
         self.res.clear()
         self.drops.clear()
-        types = [(Tree, 25, 4, 6), (CheeseOre, 35, 3, 5), (Tomato, 80, 2, 5)]
+        types = [(Tree, 25, 4, 6), (CheeseOre, 35, 3, 5), (Tomato, 55, 2, 5)]
         
         for cls, n_clusters, n_per, min_dist in types:
             for _ in range(n_clusters):
@@ -31,7 +31,6 @@ class ResourceManager:
 
     def update(self, dt, player, dim):
         for r in self.res: r.update(dt)
-        # Collect drops
         for d in self.drops[:]:
             if ((dim == 1 and d.type == "tomato") or (dim == 0 and d.type != "tomato")) and player.rect.colliderect(d.rect):
                 if player.inventory.add_item(d.type):
@@ -39,16 +38,15 @@ class ResourceManager:
 
     def draw(self, surf, ox, oy, dim):
         for r in self.res:
-            if (dim == 1 and isinstance(r, Tomato)) or (dim == 0 and not isinstance(r, Tomato)): 
-                r.draw(surf, ox, oy)
+            r.draw(surf, ox, oy, dim)
         for d in self.drops:
             if (dim == 1 and d.type == "tomato") or (dim == 0 and d.type != "tomato"): 
-                d.draw(surf, ox, oy)
+                d.draw(surf, ox, oy, dim)
 
-    def check_hit(self, player, damage, dim, radius=200):
-        px, py = player.rect.centerx, player.rect.centery
+    def check_hit(self, pos, damage, dim, radius=200):
+        px, py = pos
         for r in self.res[:]:
-            if ((dim == 1 and isinstance(r, Tomato)) or (dim == 0 and not isinstance(r, Tomato))) and math.hypot(px - r.rect.centerx, py - r.rect.centery) < radius:
-                if r.take_damage(damage):
+            if math.hypot(px - r.rect.centerx, py - r.rect.centery) < radius:
+                if r.take_damage(damage, dim):
                     self.drops.append(Drop(r.rect.x, r.rect.y, r.drop_type))
                     self.res.remove(r)

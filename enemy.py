@@ -39,6 +39,7 @@ class Squid:
         self.hp, self.max_hp, self.hit_timer = 50, 50, 0
     
     def take_damage(self, amount):
+        if self.hit_timer > 0: return False
         self.hp -= amount
         self.hit_timer = 0.2
         return self.hp <= 0

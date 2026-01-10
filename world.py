@@ -1,10 +1,11 @@
 import random, math, pygame, numpy as np, settings
 from portal import Portal
 from oven import PizzaOven
-from effects import Shockwave
+from effects import Shockwave, MusicNote
 from enemy_manager import EnemyManager
 from resource_manager import ResourceManager
-from item import DrumItem
+from item import DrumItem, PanItem
+
 
 class WorldManager:
     def __init__(self, map_inst):
@@ -43,14 +44,22 @@ class WorldManager:
         self.enemy_manager.spawn(self.is_safe, w, h)
 
     def trigger_weapon(self, p):
-        if p.weapon == "drum_weapon" and self.cd <= 0:
+        if self.cd > 0: return False
+        
+        if p.weapon == "drum_weapon":
             self.effs.append(Shockwave(p)); self.cd = self.cd_limit
             if self.sounds: random.choice(self.sounds).play()
             
-            self.res_manager.check_hit(p, self.damage, self.dim)
+            self.res_manager.check_hit(p.rect.center, self.damage, self.dim)
             if self.dim == 0:
-                self.enemy_manager.check_hit(p, 10)
+                self.enemy_manager.check_hit(p.rect.center, 10)
             return True
+            
+        elif p.weapon == "pan_weapon":
+            self.cd = 1.5
+            p.start_dash(p.last_dir)
+            return True
+        
         return False
 
     def update(self, p, dt):
@@ -60,6 +69,12 @@ class WorldManager:
             e.update(dt)
             if e.done: self.effs.remove(e)
             
+        if p.dash_timer > 0:
+            if random.random() < 0.3: self.effs.append(MusicNote(p.rect.centerx, p.rect.centery))
+            self.res_manager.check_hit(p.rect.center, 2, self.dim, radius=60)
+            if self.dim == 0:
+                self.enemy_manager.check_hit(p.rect.center, 20, radius=60)
+
         for po in self.portals:
             if p.rect.colliderect(po.rect):
                 coll = True
@@ -69,8 +84,6 @@ class WorldManager:
         
         if self.dim == 1:
             self.oven.update(p.rect)
-            for w in self.weaps[:]:
-                if p.rect.colliderect(w.rect): p.weapon, _ = w.type, self.weaps.remove(w)
         
         self.res_manager.update(dt, p, self.dim)
         self.enemy_manager.update(dt, p, self.dim)

@@ -1,4 +1,4 @@
-import pygame, sys, settings
+import pygame, sys, settings, random
 from map import Map
 from player import Player
 from camera import Camera
@@ -21,10 +21,16 @@ class Game:
         self.f_s.fill((0, 0, 0))
         self.font, self.cheat_buf = pygame.font.Font("assets/Handpixies.ttf", 36), ""
         self.shop_menu = None
+        self.last_weapon = None
 
     def start(self):
         self.map, self.pizzas_made = Map(), 0
         self.player = Player(settings.MAP_WIDTH//2+80, settings.MAP_HEIGHT//2-40, self.map)
+        
+        opts = ["drum_weapon", "pan_weapon"]
+        self.player.weapon = random.choice(opts)
+        self.last_weapon = self.player.weapon
+        
         self.world = WorldManager(self.map)
         self.camera = Camera(settings.MAP_WIDTH, settings.MAP_HEIGHT)
         self.ui, self.recipe_menu, self.shop_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font)
@@ -78,6 +84,13 @@ class Game:
                 self.state, self.wave_timer, self.wave_num = 'PLAYING', 90, self.wave_num + 1
                 self.world.dim = 1
                 self.player.respawn(settings.MAP_WIDTH//2+80, settings.MAP_HEIGHT//2-40)
+                
+                # New weapon selection
+                opts = [w for w in ["drum_weapon", "pan_weapon"] if w != self.last_weapon]
+                if not opts: opts = ["drum_weapon"]
+                self.player.weapon = random.choice(opts)
+                self.last_weapon = self.player.weapon
+                
                 self.world.spawn()
                 self.world.enemy_manager.projectiles.clear()
                 self.world.res_manager.drops.clear()

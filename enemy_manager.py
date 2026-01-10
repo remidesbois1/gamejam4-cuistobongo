@@ -36,8 +36,8 @@ class EnemyManager:
         for en in self.enemies: en.draw(surf, ox, oy)
         for proj in self.projectiles: proj.draw(surf, ox, oy)
 
-    def check_hit(self, player, damage, radius=200):
-        px, py = player.rect.centerx, player.rect.centery
+    def check_hit(self, pos, damage, radius=200):
+        px, py = pos
         for en in self.enemies[:]:
             if math.hypot(px - en.rect.centerx, py - en.rect.centery) < radius:
                 if en.take_damage(damage):
