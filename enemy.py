@@ -107,3 +107,111 @@ class Squid:
             pygame.draw.rect(surf, (255, 0, 0), (rx, ry, 40, 5))
             if self.hp > 0:
                 pygame.draw.rect(surf, (0, 255, 0), (rx, ry, int(40 * (self.hp / self.max_hp)), 5))
+class TomatoEnemy:
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x, y, 54, 54)
+        self.pos = pygame.Vector2(x, y)
+        self.max_hp, self.hp = 30, 30
+        self.hit_timer = 0
+        self.drop_type = "tomato"
+        
+        self.state = 'IDLE' 
+        self.timer = random.uniform(0.5, 1.5)
+        self.vel = pygame.Vector2(0, 0)
+        self.angle = 0
+        
+        try: self.base_img = pygame.transform.scale(pygame.image.load("assets/tomato.png").convert_alpha(), (54, 54))
+        except: self.base_img = None
+
+    def take_damage(self, amount):
+        if self.hit_timer > 0: return False
+        self.hp -= amount
+        self.hit_timer = 0.2
+        return self.hp <= 0
+
+    def update(self, dt, player_rect, projectiles_list, others):
+        self.hit_timer = max(0, self.hit_timer - dt)
+        dist_vec = pygame.Vector2(player_rect.center) - self.pos
+        dist = dist_vec.length()
+        
+        self.timer -= dt
+            
+        if self.state == 'IDLE':
+            self.vel = pygame.Vector2(0, 0)
+            if self.timer <= 0:
+                if dist < 220: # Trigger Attack
+                    self.state, self.timer = 'CHARGE_PREP', 1.0
+                else: # Wander Jump
+                    self.state, self.timer = 'JUMP_PREP', 0.5
+        
+        elif self.state == 'JUMP_PREP':
+            if self.timer <= 0:
+                self.state, self.timer = 'JUMP', 0.5
+                angle = random.uniform(0, 6.28)
+                self.vel = pygame.Vector2(math.cos(angle), math.sin(angle)) * 120
+        
+        elif self.state == 'JUMP':
+            self.pos += self.vel * dt
+            if self.timer <= 0:
+                self.state, self.timer = 'LAND', 0.2
+                self.vel = pygame.Vector2(0, 0)
+        
+        elif self.state == 'LAND':
+            if self.timer <= 0:
+                self.state, self.timer = 'IDLE', random.uniform(0.5, 1.0)
+
+        elif self.state == 'CHARGE_PREP':
+            if self.timer <= 0:
+                self.state, self.timer = 'ROLLING', 1.5
+                if dist > 0: self.vel = dist_vec.normalize() * 320
+        
+        elif self.state == 'ROLLING':
+            self.pos += self.vel * dt
+            self.angle -= 720 * dt
+            if self.timer <= 0:
+                self.state, self.timer = 'IDLE', 1.5
+                self.angle = 0
+
+        sep = pygame.Vector2(0, 0)
+        for o in others:
+            if o is not self:
+                d = self.pos.distance_to(o.pos)
+                if d < 50:
+                    diff = self.pos - o.pos
+                    if diff.length() > 0: sep += diff.normalize() * (100 / max(1, d))
+        self.pos += sep * dt
+        self.rect.center = self.pos
+
+    def draw(self, surf, ox, oy):
+        img = self.base_img
+        if not img: 
+             pygame.draw.circle(surf, (255, 0, 0), (self.rect.centerx - ox, self.rect.centery - oy), 27)
+             return
+
+        w, h = 54, 54
+        dy = 0
+        if self.state in ['JUMP_PREP', 'LAND']:
+            w, h = 64, 44
+            img = pygame.transform.scale(img, (w, h))
+            dy = 5
+        elif self.state == 'JUMP':
+            w, h = 44, 64
+            img = pygame.transform.scale(img, (w, h))
+            dy = -10 # Jump up visual
+        elif self.state == 'ROLLING':
+            img = pygame.transform.rotate(img, self.angle)
+            w, h = img.get_size()
+        elif self.state == 'CHARGE_PREP':
+            off = math.sin(pygame.time.get_ticks() * 0.5) * 3
+            ox += off
+
+        if self.hit_timer > 0: 
+            mask = pygame.mask.from_surface(img)
+            surf.blit(mask.to_surface(setcolor=(255, 255, 255, 128), unsetcolor=(0,0,0,0)), (self.rect.centerx - w//2 - ox, self.rect.centery - h//2 - oy + dy))
+        else:
+            surf.blit(img, (self.rect.centerx - w//2 - ox, self.rect.centery - h//2 - oy + dy))
+        
+        if self.hp < self.max_hp:
+             rx, ry = self.rect.x - ox + 7, self.rect.y - oy - 15
+             pygame.draw.rect(surf, (255, 0, 0), (rx, ry, 40, 5))
+             pygame.draw.rect(surf, (0, 255, 0), (rx, ry, int(40 * (self.hp / self.max_hp)), 5))

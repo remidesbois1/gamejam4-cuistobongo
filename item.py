@@ -92,3 +92,6 @@ class DrumItem(Item):
 
 class PanItem(Item):
     def __init__(self, x, y): super().__init__(x, y, "assets/chief_pan.png", 64, 64); self.type = "pan_weapon"
+
+class SaxItem(Item):
+    def __init__(self, x, y): super().__init__(x, y, "assets/chief_sax.png", 64, 64); self.type = "sax_weapon"

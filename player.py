@@ -16,6 +16,7 @@ class Player:
         try:
             self.img_body = pygame.transform.scale(pygame.image.load("assets/chief_bomgo.png").convert_alpha(), (80, 80))
             self.img_pan = pygame.transform.scale(pygame.image.load("assets/chief_pan.png").convert_alpha(), (80, 80))
+            self.img_sax = pygame.transform.scale(pygame.image.load("assets/chief_sax.png").convert_alpha(), (80, 80))
             for i in [1, 2, 3]:
                 img = pygame.image.load(f"assets/LEG{i}.png").convert_alpha()
                 self.legs.append(pygame.transform.scale(img, (80, 60)))
@@ -39,7 +40,7 @@ class Player:
         if direction.length() == 0: direction = pygame.Vector2(1, 0)
         self.dash_vec = direction.normalize()
         self.dash_timer = 0.2
-        self.inv_timer = 0.3 # Dash gives brief invincibility
+        self.inv_timer = 0.3
 
     def handle_input(self, dt):
         if self.dash_timer > 0:
@@ -48,7 +49,7 @@ class Player:
             self.pos.x = max(0, min(self.pos.x, self.map.width - 80))
             self.pos.y = max(0, min(self.pos.y, self.map.height - 80))
             self.rect.topleft = self.pos
-            return # Skip normal movement
+            return
 
         self.inv_timer -= dt
         k = pygame.key.get_pressed()
@@ -69,11 +70,17 @@ class Player:
             self.frame, self.anim_t = 0, 0
 
     def draw(self, surf, ox, oy):
-        pos = (self.rect.x - ox, self.rect.y - oy)
-        img = self.img_pan if self.weapon == "pan_weapon" and self.img_pan else self.img_body
+        pos = (self.rect.x - ox, self.rect.y - oy) # Body
+        body = self.img_body
+        if self.weapon == "pan_weapon" and self.img_pan: body = self.img_pan
+        if self.weapon == "sax_weapon" and self.img_sax: body = self.img_sax
         
-        if img: surf.blit(img, (pos[0] - 2, pos[1] - 79)) # offset
+        if body:
+            surf.blit(body, (pos[0] - 2, pos[1] - 79))
+        else:
+            pygame.draw.rect(surf, (255, 0, 0), (self.rect.x - ox, self.rect.y - oy, 80, 80))
+        
         if self.legs:
             surf.blit(self.legs[self.frame], pos)
-        elif not img:
+        elif not body: # This condition was `elif not img:` in the original, now `body` is the relevant variable.
             pygame.draw.rect(surf, settings.PLAYER_COLOR, (pos[0], pos[1], 80, 80))

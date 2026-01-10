@@ -9,7 +9,7 @@ class ResourceManager:
     def spawn(self, safe_func, w, h):
         self.res.clear()
         self.drops.clear()
-        types = [(Tree, 25, 4, 6), (CheeseOre, 35, 3, 5), (Tomato, 55, 2, 5)]
+        types = [(Tree, 25, 4, 6), (CheeseOre, 35, 3, 5)]
         
         for cls, n_clusters, n_per, min_dist in types:
             for _ in range(n_clusters):

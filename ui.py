@@ -8,7 +8,7 @@ class UI:
             for k, p in m.items(): self.icons[k] = pygame.transform.scale(pygame.image.load(p).convert_alpha(), (40, 40))
         except: pass
 
-    def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None):
+    def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None, round_p=0, p_goal=1):
         w_txt = self.font.render(f"VAGUE {wave_num}", True, (255, 215, 100))
         surface.blit(w_txt, (settings.SCREEN_WIDTH//2 - w_txt.get_width()//2, 70))
         t_txt = self.font.render(f"{int(wave_timer//60):02d}:{int(wave_timer%60):02d}", True, (255, 255, 255))
@@ -21,15 +21,17 @@ class UI:
         if hp > 0:
             pygame.draw.rect(surface, (0, 200, 50), (bx, by, int(bar_w * (hp/max_hp)), bar_h), border_radius=5)
         pygame.draw.rect(surface, (200, 200, 200), (bx, by, bar_w, bar_h), 2, border_radius=5)
-
-        prect = pygame.Rect(20, 20, 100, 60)
+        
+        # Goal/Pizza UI
+        prect = pygame.Rect(20, 20, 120, 60)
         ps = pygame.Surface(prect.size, pygame.SRCALPHA)
         pygame.draw.rect(ps, (30, 35, 50, 180), (0,0,prect.w,prect.h), border_radius=12)
         surface.blit(ps, prect.topleft)
         pygame.draw.rect(surface, (100, 110, 140), prect, 2, border_radius=12)
         if "pizza_stat" in self.icons:
             surface.blit(self.icons["pizza_stat"], (prect.x + 10, prect.y + 10))
-            txt = self.count_f.render(str(p_made), True, (255, 255, 255))
+            clr = (50, 255, 50) if round_p >= p_goal else (255, 255, 255)
+            txt = self.count_f.render(f"{round_p}/{p_goal}", True, clr)
             surface.blit(txt, (prect.x + 55, prect.y + 18))
         rect = pygame.Rect(settings.SCREEN_WIDTH - 225, 20, 205, 60)
         s = pygame.Surface(rect.size, pygame.SRCALPHA)

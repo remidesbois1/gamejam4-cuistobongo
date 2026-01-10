@@ -27,7 +27,7 @@ class Game:
         self.map, self.pizzas_made = Map(), 0
         self.player = Player(settings.MAP_WIDTH//2+80, settings.MAP_HEIGHT//2-40, self.map)
         
-        opts = ["drum_weapon", "pan_weapon"]
+        opts = ["drum_weapon", "pan_weapon", "sax_weapon"]
         self.player.weapon = random.choice(opts)
         self.last_weapon = self.player.weapon
         
@@ -35,17 +35,21 @@ class Game:
         self.camera = Camera(settings.MAP_WIDTH, settings.MAP_HEIGHT)
         self.ui, self.recipe_menu, self.shop_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font)
         self.score, self.f_a, self.wave_timer, self.wave_num, self.state = 0, 0, 90, 1, 'PLAYING'
+        self.pizza_goal, self.round_p = 3, 0
 
     def handle(self):
         for e in pygame.event.get():
             if e.type == pygame.QUIT: self.running = False
+            if e.type == pygame.KEYDOWN and self.state == 'GAME_OVER' and e.key == pygame.K_SPACE:
+                self.state = 'MENU'
             if e.type == pygame.KEYDOWN:
                 self.cheat_buf = (self.cheat_buf + e.unicode).upper()[-10:]
-                if "PIZZA" in self.cheat_buf: self.pizzas_made, self.cheat_buf = self.pizzas_made + 15, ""
+                if "PIZZA" in self.cheat_buf: self.pizzas_made, self.round_p, self.cheat_buf = self.pizzas_made + 15, self.round_p + 15, ""
                 if "INV" in self.cheat_buf: 
                     for k in self.player.inventory.counts: self.player.inventory.counts[k] = self.player.inventory.cap
                     self.cheat_buf = ""
                 if "SKIP" in self.cheat_buf: self.wave_timer, self.cheat_buf = 0, ""
+                if "OVER" in self.cheat_buf: self.state, self.cheat_buf = 'GAME_OVER', ""
             if self.state == 'MENU':
                 res = self.menu.handle_events(e)
                 if res == "START": self.start()
@@ -53,7 +57,9 @@ class Game:
             elif self.state == 'PLAYING':
                 if self.recipe_menu.is_open:
                     p = self.recipe_menu.handle_input(e, self.player, self.om)
-                    if p and p > 0: self.score, self.pizzas_made = self.score + p, self.pizzas_made + 1
+                    if p and p > 0: 
+                        self.score, self.pizzas_made = self.score + p, self.pizzas_made + 1
+                        self.round_p += 1
                 elif e.type == pygame.KEYDOWN and e.key == pygame.K_e:
                     if self.world.oven.active: self.recipe_menu.toggle()
                     else: self.world.trigger_weapon(self.player)
@@ -61,6 +67,7 @@ class Game:
 
     def update(self, dt):
         if self.state == 'MENU': self.menu.update(dt)
+        elif self.state == 'GAME_OVER': pass
         elif self.state == 'PLAYING':
             if not self.recipe_menu.is_open: self.player.handle_input(dt)
             if self.player.health <= 0:
@@ -75,18 +82,24 @@ class Game:
             self.score += self.om.update(dt)
             if self.recipe_menu.is_open and not self.world.oven.active: self.recipe_menu.toggle()
             if self.wave_timer <= 0:
-                self.state, self.wave_timer, self.recipe_menu.is_open = 'SHOP', 20, False
-                self.recipe_menu.target = self.recipe_menu.cpos
-                self.om.reset_orders(); self.shop_menu.refresh_active()
+                if self.round_p >= self.pizza_goal:
+                    self.state, self.wave_timer, self.recipe_menu.is_open = 'SHOP', 20, False
+                    self.recipe_menu.target = self.recipe_menu.cpos
+                    self.om.reset_orders(); self.shop_menu.refresh_active()
+                else:
+                    self.state = 'GAME_OVER'
         elif self.state == 'SHOP':
             self.wave_timer -= dt
             if self.wave_timer <= 0: 
                 self.state, self.wave_timer, self.wave_num = 'PLAYING', 90, self.wave_num + 1
+                self.pizza_goal += 2
+                self.round_p = 0
+                
                 self.world.dim = 1
                 self.player.respawn(settings.MAP_WIDTH//2+80, settings.MAP_HEIGHT//2-40)
                 
                 # New weapon selection
-                opts = [w for w in ["drum_weapon", "pan_weapon"] if w != self.last_weapon]
+                opts = [w for w in ["drum_weapon", "pan_weapon", "sax_weapon"] if w != self.last_weapon]
                 if not opts: opts = ["drum_weapon"]
                 self.player.weapon = random.choice(opts)
                 self.last_weapon = self.player.weapon
@@ -97,13 +110,22 @@ class Game:
 
     def draw(self):
         if self.state == 'MENU': self.menu.draw()
+        elif self.state == 'GAME_OVER':
+            self.screen.fill((50, 0, 0))
+            t1 = self.font.render("GAME OVER", True, (255, 255, 255))
+            t2 = self.font.render(f"SCORE: {self.score}", True, (255, 215, 0))
+            t3 = self.font.render("PRESS SPACE TO RETURN TO MENU", True, (200, 200, 200))
+            w, h = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
+            self.screen.blit(t1, (w//2 - t1.get_width()//2, h//2 - 100))
+            self.screen.blit(t2, (w//2 - t2.get_width()//2, h//2))
+            self.screen.blit(t3, (w//2 - t3.get_width()//2, h//2 + 100))
         else:
             self.world.draw(self.screen, self.camera.offset_x, self.camera.offset_y)
             self.player.draw(self.screen, self.camera.offset_x, self.camera.offset_y)
             if self.f_a > 0: self.f_s.set_alpha(int(self.f_a)); self.screen.blit(self.f_s, (0, 0))
             score_txt = self.font.render(f"SCORE : {self.score}", True, (255,255,255))
             self.screen.blit(score_txt, (settings.SCREEN_WIDTH//2 - score_txt.get_width()//2, 20))
-            self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon)
+            self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal)
             if self.state != 'SHOP': self.recipe_menu.draw(self.screen, self.player.inventory, self.om)
             if self.world.dim == 1: self.ui.draw_arrow(self.screen, self.player.rect, self.world.oven.rect)
             if self.state == 'SHOP': self.shop_menu.draw(self.screen, self)
