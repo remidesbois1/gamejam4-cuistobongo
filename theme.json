@@ -1,20 +1,62 @@
 {
+    "#main_panel": {
+        "colours": {
+            "dark_bg": "#121217",
+            "normal_border": "#2c2c34"
+        },
+        "shape": "rounded_rectangle",
+        "shape_corner_radius": "8"
+    },
     "#main_title": {
         "font": {
-            "name": "fira_code",
+            "name": "arial",
             "size": "48",
             "bold": "1"
         },
         "colours": {
-            "normal_text": "#FFD700"
+            "normal_text": "#e2e2e2"
+        }
+    },
+    "#sub_title": {
+        "font": {
+            "name": "arial",
+            "size": "18",
+            "italic": "1"
+        },
+        "colours": {
+            "normal_text": "#88888d"
+        }
+    },
+    "#version_label": {
+        "font": {
+            "name": "arial",
+            "size": "12"
+        },
+        "colours": {
+            "normal_text": "#44444a"
         }
     },
     "button": {
+        "font": {
+            "name": "arial",
+            "bold": "1",
+            "size": "16"
+        },
         "colours": {
-            "normal_bg": "#2c3e50",
-            "hovered_bg": "#34495e",
-            "active_bg": "#1abc9c",
-            "normal_text": "#ecf0f1"
+            "normal_bg": "#1c1c21",
+            "hovered_bg": "#2c2c34",
+            "active_bg": "#ffffff",
+            "normal_border": "#2c2c34",
+            "normal_text": "#e2e2e2",
+            "hovered_text": "#ffffff",
+            "active_text": "#000000"
+        },
+        "shape": "rounded_rectangle",
+        "shape_corner_radius": "4"
+    },
+    "#play_button": {
+        "colours": {
+            "normal_border": "#44444a"
         }
     }
 }
