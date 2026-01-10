@@ -2,18 +2,18 @@ import random
 from recipe import RECIPES
 
 class Order:
-    def __init__(self, recipe):
-        self.recipe, self.max_time = recipe, recipe.time_limit
-        self.timer = recipe.time_limit
+    def __init__(self, recipe, time_mult=1.0):
+        self.recipe, self.max_time = recipe, recipe.time_limit * time_mult
+        self.timer = self.max_time
 
 class OrderManager:
     def __init__(self, max_slots=3):
-        self.max_slots = max_slots
+        self.max_slots, self.time_mult = max_slots, 1.0
         self.reset_orders()
 
     def reset_orders(self):
         self.active_orders = [None] * self.max_slots
-        self.active_orders[0] = Order(random.choice(RECIPES))
+        self.active_orders[0] = Order(random.choice(RECIPES), self.time_mult)
         self.spawn_timer = 0
 
     def update(self, dt):
@@ -30,7 +30,7 @@ class OrderManager:
                 self.spawn_timer = 0
                 for i in range(len(self.active_orders)):
                     if self.active_orders[i] is None:
-                        self.active_orders[i] = Order(random.choice(RECIPES))
+                        self.active_orders[i] = Order(random.choice(RECIPES), self.time_mult)
                         break
         return score_change
 

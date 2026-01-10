@@ -14,9 +14,33 @@ class Resource(Item):
     def __init__(self, x, y, image_path, w, h, max_health, drop_type):
         super().__init__(x, y, image_path, w, h)
         self.max_health, self.health, self.drop_type = max_health, max_health, drop_type
-    def take_damage(self, amount): self.health -= amount; return self.health <= 0
+        self.hit_timer = 0
+    
+    def update(self, dt):
+        self.hit_timer = max(0, self.hit_timer - dt)
+
+    def take_damage(self, amount):
+        self.health -= amount
+        self.hit_timer = 0.2
+        return self.health <= 0
+
     def draw(self, surf, ox, oy):
-        super().draw(surf, ox, oy)
+        pos = (self.rect.x - ox, self.rect.y - oy)
+        
+        # Squash effect
+        if self.image:
+            if self.hit_timer > 0:
+                sq = (self.hit_timer / 0.2) * 0.3
+                nw, nh = int(self.w * (1 + sq * 0.5)), int(self.h * (1 - sq))
+                img = pygame.transform.scale(self.image, (nw, nh))
+                # Center horizontally, align bottom
+                dx = (self.w - nw) // 2
+                dy = (self.h - nh)
+                surf.blit(img, (pos[0] + dx, pos[1] + dy))
+            else:
+                surf.blit(self.image, pos)
+        else: pygame.draw.rect(surf, (200, 200, 200), (pos[0], pos[1], self.w, self.h))
+
         if self.health < self.max_health:
             pos = (self.rect.x - ox, self.rect.y - oy)
             pygame.draw.rect(surf, (50, 0, 0), (pos[0], pos[1] + self.h + 5, self.w, 8))

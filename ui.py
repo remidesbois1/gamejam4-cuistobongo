@@ -1,18 +1,27 @@
-import pygame, settings
+import pygame, settings, math
 
 class UI:
     def __init__(self, font):
-        self.font, self.count_f, self.icons = pygame.font.SysFont("Arial", 20, True), pygame.font.SysFont("Arial", 22, True), {}
+        self.font, self.count_f, self.icons = pygame.font.Font("assets/Handpixies.ttf", 20), pygame.font.Font("assets/Handpixies.ttf", 22), {}
         try:
             m = {"tomato": "assets/tomato-icon.png", "cheese": "assets/fromage-icon.png", "dough": "assets/dough.png", "drum_weapon": "assets/drum.png", "pizza_stat": "assets/pizza_marguerita.png"}
             for k, p in m.items(): self.icons[k] = pygame.transform.scale(pygame.image.load(p).convert_alpha(), (40, 40))
         except: pass
 
-    def draw(self, surface, inv, p_made, wave_num, wave_timer, weapon=None):
+    def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None):
         w_txt = self.font.render(f"VAGUE {wave_num}", True, (255, 215, 100))
         surface.blit(w_txt, (settings.SCREEN_WIDTH//2 - w_txt.get_width()//2, 70))
         t_txt = self.font.render(f"{int(wave_timer//60):02d}:{int(wave_timer%60):02d}", True, (255, 255, 255))
         surface.blit(t_txt, (settings.SCREEN_WIDTH//2 - t_txt.get_width()//2, 100))
+        
+        # HP Bar
+        bar_w, bar_h = 200, 20
+        bx, by = settings.SCREEN_WIDTH//2 - bar_w//2, 130
+        pygame.draw.rect(surface, (50, 0, 0), (bx, by, bar_w, bar_h), border_radius=5)
+        if hp > 0:
+            pygame.draw.rect(surface, (0, 200, 50), (bx, by, int(bar_w * (hp/max_hp)), bar_h), border_radius=5)
+        pygame.draw.rect(surface, (200, 200, 200), (bx, by, bar_w, bar_h), 2, border_radius=5)
+
         prect = pygame.Rect(20, 20, 100, 60)
         ps = pygame.Surface(prect.size, pygame.SRCALPHA)
         pygame.draw.rect(ps, (30, 35, 50, 180), (0,0,prect.w,prect.h), border_radius=12)
@@ -45,3 +54,16 @@ class UI:
             pygame.draw.rect(ws, (30, 35, 50, 180), (0,0,40,40), border_radius=8)
             surface.blit(ws, wr.topleft)
             surface.blit(self.icons[weapon], wr.topleft)
+    def draw_arrow(self, surface, p_rect, oven_rect):
+        dx, dy = oven_rect.centerx - p_rect.centerx, oven_rect.centery - p_rect.centery
+        if math.hypot(dx, dy) < 400: return
+        angle = math.atan2(dy, dx)
+        cx, cy = settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2
+        ax, ay = cx + math.cos(angle) * 150, cy + math.sin(angle) * 150
+        pts = [
+            (ax + math.cos(angle) * 20, ay + math.sin(angle) * 20),
+            (ax + math.cos(angle + 2.6) * 15, ay + math.sin(angle + 2.6) * 15),
+            (ax + math.cos(angle - 2.6) * 15, ay + math.sin(angle - 2.6) * 15)
+        ]
+        pygame.draw.polygon(surface, (255, 50, 50), pts)
+        pygame.draw.polygon(surface, (255, 255, 255), pts, 2)

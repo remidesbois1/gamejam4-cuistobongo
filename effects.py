@@ -4,7 +4,7 @@ class Shockwave:
     def __init__(self, target):
         self.target = target
         self.radius, self.duration, self.timer = 220, 0.4, 0
-        try: self.img = pygame.image.load("assets/shockwave.png").convert_alpha()
+        try: self.img = pygame.image.load("assets/bomgo_effect.png").convert_alpha()
         except: self.img = None
 
     def update(self, dt):

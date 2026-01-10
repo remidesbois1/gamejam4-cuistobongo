@@ -9,9 +9,8 @@
     },
     "#main_title": {
         "font": {
-            "name": "arial",
-            "size": "48",
-            "bold": "1"
+            "name": "assets/Handpixies.ttf",
+            "size": "48"
         },
         "colours": {
             "normal_text": "#e2e2e2"
@@ -19,9 +18,8 @@
     },
     "#sub_title": {
         "font": {
-            "name": "arial",
-            "size": "18",
-            "italic": "1"
+            "name": "assets/Handpixies.ttf",
+            "size": "18"
         },
         "colours": {
             "normal_text": "#88888d"
@@ -29,7 +27,7 @@
     },
     "#version_label": {
         "font": {
-            "name": "arial",
+            "name": "assets/Handpixies.ttf",
             "size": "12"
         },
         "colours": {
@@ -38,8 +36,7 @@
     },
     "button": {
         "font": {
-            "name": "arial",
-            "bold": "1",
+            "name": "assets/Handpixies.ttf",
             "size": "16"
         },
         "colours": {
