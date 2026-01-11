@@ -19,13 +19,13 @@ class Game:
         self.score, self.f_a = 0, 0
         self.f_s = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         self.f_s.fill((0, 0, 0))
-        self.font, self.cheat_buf = pygame.font.Font("assets/Handpixies.ttf", 36), ""
+        self.font, self.cheat_buf = pygame.font.Font(settings.FONT_NAME, 36), ""
         self.shop_menu = None
         self.last_weapon = None
 
     def start(self):
         self.map, self.pizzas_made = Map(), 0
-        self.player = Player(settings.MAP_WIDTH//2+80, settings.MAP_HEIGHT//2-40, self.map)
+        self.player = Player(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2, self.map)
         
         opts = ["drum_weapon", "pan_weapon", "sax_weapon"]
         self.player.weapon = random.choice(opts)
@@ -34,14 +34,15 @@ class Game:
         self.world = WorldManager(self.map)
         self.camera = Camera(settings.MAP_WIDTH, settings.MAP_HEIGHT)
         self.ui, self.recipe_menu, self.shop_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font)
-        self.score, self.f_a, self.wave_timer, self.wave_num, self.state = 0, 0, 90, 1, 'PLAYING'
-        self.pizza_goal, self.round_p = 3, 0
+        self.score, self.f_a, self.wave_timer, self.wave_num, self.state = 0, 0, settings.WAVE_DURATION, 1, 'PLAYING'
+        self.pizza_goal, self.round_p = settings.INITIAL_PIZZA_GOAL, 0
 
     def handle(self):
         for e in pygame.event.get():
             if e.type == pygame.QUIT: self.running = False
             if e.type == pygame.KEYDOWN and self.state == 'GAME_OVER' and e.key == pygame.K_SPACE:
                 self.state = 'MENU'
+                continue
             if e.type == pygame.KEYDOWN:
                 self.cheat_buf = (self.cheat_buf + e.unicode).upper()[-10:]
                 if "PIZZA" in self.cheat_buf: self.pizzas_made, self.round_p, self.cheat_buf = self.pizzas_made + 15, self.round_p + 15, ""
@@ -60,7 +61,7 @@ class Game:
                     if p and p > 0: 
                         self.score, self.pizzas_made = self.score + p, self.pizzas_made + 1
                         self.round_p += 1
-                elif e.type == pygame.KEYDOWN and e.key == pygame.K_e:
+                elif e.type == pygame.KEYDOWN and (e.key == pygame.K_e or e.key == pygame.K_SPACE):
                     if self.world.oven.active: self.recipe_menu.toggle()
                     else: self.world.trigger_weapon(self.player)
             elif self.state == 'SHOP': self.shop_menu.handle_input(e, self)
@@ -71,19 +72,24 @@ class Game:
         elif self.state == 'PLAYING':
             if not self.recipe_menu.is_open: self.player.handle_input(dt)
             if self.player.health <= 0:
-                self.player.respawn(settings.MAP_WIDTH//2+80, settings.MAP_HEIGHT//2-40)
+                self.player.respawn(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2)
                 self.world.dim = 1
                 self.wave_timer -= 30
                 self.pizzas_made //= 2
             if self.world.update(self.player, dt): self.f_a = 255
+            
+            if self.player.needs_shake:
+                self.camera.start_shake(10, 0.3)
+                self.player.needs_shake = False
+
             self.f_a, self.wave_timer = max(0, self.f_a - 1000 * dt), self.wave_timer - dt
-            self.camera.update(self.player.rect)
+            self.camera.update(self.player.rect, dt)
             self.recipe_menu.update(dt)
             self.score += self.om.update(dt)
             if self.recipe_menu.is_open and not self.world.oven.active: self.recipe_menu.toggle()
             if self.wave_timer <= 0:
                 if self.round_p >= self.pizza_goal:
-                    self.state, self.wave_timer, self.recipe_menu.is_open = 'SHOP', 20, False
+                    self.state, self.wave_timer, self.recipe_menu.is_open = 'SHOP', settings.SHOP_DURATION, False
                     self.recipe_menu.target = self.recipe_menu.cpos
                     self.om.reset_orders(); self.shop_menu.refresh_active()
                 else:
@@ -91,12 +97,12 @@ class Game:
         elif self.state == 'SHOP':
             self.wave_timer -= dt
             if self.wave_timer <= 0: 
-                self.state, self.wave_timer, self.wave_num = 'PLAYING', 90, self.wave_num + 1
-                self.pizza_goal += 2
+                self.state, self.wave_timer, self.wave_num = 'PLAYING', settings.WAVE_DURATION, self.wave_num + 1
+                self.pizza_goal += settings.PIZZA_GOAL_INCREMENT
                 self.round_p = 0
                 
                 self.world.dim = 1
-                self.player.respawn(settings.MAP_WIDTH//2+80, settings.MAP_HEIGHT//2-40)
+                self.player.respawn(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2)
                 
                 # New weapon selection
                 opts = [w for w in ["drum_weapon", "pan_weapon", "sax_weapon"] if w != self.last_weapon]

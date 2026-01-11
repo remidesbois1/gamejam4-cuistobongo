@@ -3,48 +3,81 @@ from recipe import RECIPES
 
 class PizzaCard:
     @staticmethod
+    @staticmethod
     def render(surf, o, rect, menu, inv, is_active):
-        pygame.draw.rect(surf, (40,45,60) if not o else ((60,65,85) if (menu.is_open and is_active) else (50,55,75)), rect, border_radius=10)
+        draw_rect = rect.copy()
+        if o and o.timer <= 10:
+            off_x = math.sin(menu.timer * 50) * 3
+            off_y = math.cos(menu.timer * 42) * 3
+            draw_rect.x += int(off_x)
+            draw_rect.y += int(off_y)
+
+        if menu.bg_paper:
+            surf.blit(pygame.transform.scale(menu.bg_paper, draw_rect.size), draw_rect)
+        else:
+            pygame.draw.rect(surf, (40,45,60) if not o else ((60,65,85) if (menu.is_open and is_active) else (50,55,75)), draw_rect, border_radius=10)
+        
         if menu.is_open and is_active:
             v = 2 + abs(int(math.sin(menu.timer)*4))
-            pygame.draw.rect(surf, (0,200,255), rect.inflate(v,v), 3, border_radius=10)
-        if not o:
-            t = menu.small.render("EN ATTENTE..." if menu.is_open else "VIDE", True, (80,85,110))
-            surf.blit(t, (rect.centerx-t.get_width()//2, rect.centery-t.get_height()//2)); return
+            pygame.draw.rect(surf, (0,200,255), draw_rect.inflate(v,v), 3, border_radius=10)
+            
+        if o and o.timer <= 25:
+            intensity = (25 - o.timer) / 25.0
+            alpha = int(intensity * 120 * (0.6 + 0.4 * math.sin(menu.timer * 10)))
+            overlay = pygame.Surface(draw_rect.size, pygame.SRCALPHA)
+            pygame.draw.rect(overlay, (255, 0, 0, alpha), (0, 0, draw_rect.w, draw_rect.h), border_radius=10)
+            surf.blit(overlay, draw_rect)
 
-        iy = rect.y + (20 if menu.is_open else 10)
+        txt_col = (50, 30, 10) if menu.bg_paper else (255, 230, 0)
+        
+        if not o:
+            t = menu.small.render("EN ATTENTE..." if menu.is_open else "VIDE", True, (100,100,120) if menu.bg_paper else (80,85,110))
+            surf.blit(t, (draw_rect.centerx-t.get_width()//2, draw_rect.centery-t.get_height()//2)); return
+
+        iy = draw_rect.y + (20 if menu.is_open else 10)
         img = menu.icons.get(o.recipe.image if menu.is_open else o.recipe.image+"_s")
-        if img: surf.blit(img, (rect.centerx-img.get_width()//2, iy))
+        if img: surf.blit(img, (draw_rect.centerx-img.get_width()//2, iy))
         
         if menu.is_open:
-            n = menu.nums.render(o.recipe.nom, True, (255, 230, 0))
-            surf.blit(n, (rect.centerx - n.get_width()//2, iy + 90))
+            n = menu.nums.render(o.recipe.nom, True, txt_col)
+            surf.blit(n, (draw_rect.centerx - n.get_width()//2, iy + 90))
         
         p = max(0, o.timer / o.max_time)
         by = iy + (125 if menu.is_open else 45)
-        pygame.draw.rect(surf, (60,60,80), (rect.x+20, by, rect.w-40, 6), border_radius=3)
-        pygame.draw.rect(surf, (255,200,0) if p > 0.3 else (255,50,50), (rect.x+20, by, int((rect.w-40)*p), 6), border_radius=3)
+        pygame.draw.rect(surf, (60,60,80), (draw_rect.x+20, by, draw_rect.w-40, 6), border_radius=3)
+        pygame.draw.rect(surf, (255,200,0) if p > 0.3 else (255,50,50), (draw_rect.x+20, by, int((draw_rect.w-40)*p), 6), border_radius=3)
         
         if menu.is_open:
-            st = menu.small.render(f"SCORE: {int(o.recipe.points * max(0.5, p))} pts", True, (255,230,0))
-            surf.blit(st, (rect.centerx-st.get_width()//2, iy+135))
+            st = menu.small.render(f"SCORE: {int(o.recipe.points * max(0.5, p))} pts", True, txt_col)
+            surf.blit(st, (draw_rect.centerx-st.get_width()//2, iy+135))
 
         ings = [ing for ing in ["dough", "tomato", "cheese"] if o.recipe.ingredients.get(ing, 0) > 0]
         iscl, ispc = (48 if menu.is_open else 32), (58 if menu.is_open else 40)
-        iy_ing, x = iy + (160 if menu.is_open else 55), rect.centerx - (len(ings)*ispc - (ispc-iscl))//2
+        iy_ing, x = iy + (175 if menu.is_open else 60), draw_rect.centerx - (len(ings)*ispc - (ispc-iscl))//2
         for i_name in ings:
             surf.blit(pygame.transform.scale(menu.icons[i_name], (iscl, iscl)), (x, iy_ing))
             need = o.recipe.ingredients[i_name]
-            cnt = f"{inv.counts[i_name]}/{need}" if menu.is_open else str(need)
-            txt = (menu.nums if menu.is_open else menu.small).render(cnt, True, (100,255,100) if inv.counts[i_name]>=need else (255,100,100))
-            tw, th = txt.get_size(); bx = pygame.Rect(x+iscl-tw-4, iy_ing+iscl-th-2, tw+6, th+4)
-            s = pygame.Surface(bx.size, pygame.SRCALPHA); pygame.draw.rect(s, (20,25,40,160), (0,0,bx.w,bx.h), border_radius=4)
-            surf.blit(s, bx.topleft); pygame.draw.rect(surf, (80,90,110), bx, 1, border_radius=4)
-            surf.blit(txt, (bx.centerx-tw//2, bx.centery-th//2)); x += ispc
+            has = inv.counts[i_name]
+            
+            txt_str = f"x{need}"
+            for ox, oy in [(-2,0), (2,0), (0,-2), (0,2)]:
+                out = menu.nums.render(txt_str, True, (255, 255, 255))
+                surf.blit(out, (x + iscl//2 - out.get_width()//2 + ox, iy_ing + iscl + oy - 5))
+            
+            q_col = (200, 0, 0) if (not menu.is_open and has < need) else (0, 0, 0)
+            qty = menu.nums.render(txt_str, True, q_col)
+            surf.blit(qty, (x + iscl//2 - qty.get_width()//2, iy_ing + iscl - 5))
+            
+            if menu.is_open:
+                col = (0, 180, 0) if has >= need else (220, 0, 0)
+                cur = menu.small.render(f"({has})", True, col)
+                surf.blit(cur, (x + iscl//2 - cur.get_width()//2, iy_ing - 18))
+
+            x += ispc
 
         if menu.is_open and inv.has_ingredients(o.recipe.ingredients):
-            pygame.draw.rect(surf, (255,180,0), (rect.x, rect.bottom-40, rect.w, 40), border_radius=10)
-            vt = menu.small.render("VALIDER !", True, (0,0,0)); surf.blit(vt, (rect.centerx-vt.get_width()//2, rect.bottom-30))
+            pygame.draw.rect(surf, (255,180,0), (draw_rect.x, draw_rect.bottom-40, draw_rect.w, 40), border_radius=10)
+            vt = menu.small.render("VALIDER !", True, (0,0,0)); surf.blit(vt, (draw_rect.centerx-vt.get_width()//2, draw_rect.bottom-30))
 
 class RecipeMenu:
     def __init__(self, font):
@@ -56,27 +89,37 @@ class RecipeMenu:
             for r in RECIPES:
                 img = pygame.image.load(r.image).convert_alpha()
                 self.icons[r.image], self.icons[r.image + "_s"] = pygame.transform.scale(img, (96,96)), pygame.transform.scale(img, (40,40))
-        except: pass
-        self.cpos, self.opos = pygame.Vector2(30, settings.SCREEN_HEIGHT-190), pygame.Vector2(settings.SCREEN_WIDTH//2-400, settings.SCREEN_HEIGHT//2-220)
+            self.bg_panel = pygame.image.load("assets/recipe_menu.png").convert_alpha()
+            self.bg_paper = pygame.image.load("assets/ui_paper.png").convert_alpha()
+        except: 
+            self.bg_panel = None
+            self.bg_paper = None
+
+        self.cpos, self.opos = pygame.Vector2(30, settings.SCREEN_HEIGHT-190), pygame.Vector2(settings.SCREEN_WIDTH//2-420, settings.SCREEN_HEIGHT//2-220)
         self.pos, self.target = pygame.Vector2(self.cpos), self.cpos
 
     def toggle(self): self.is_open = not self.is_open; self.target = self.opos if self.is_open else self.cpos
     def update(self, dt): self.pos += (self.target - self.pos) * 0.12; self.timer += dt * 5
     def handle_input(self, e, p, om):
         if not self.is_open or e.type != pygame.KEYDOWN: return None
-        if e.key in [pygame.K_LEFT, pygame.K_a]: self.idx = (self.idx - 1) % 3
+        if e.key in [pygame.K_LEFT, pygame.K_q]: self.idx = (self.idx - 1) % 3
         elif e.key in [pygame.K_RIGHT, pygame.K_d]: self.idx = (self.idx + 1) % 3
-        elif e.key == pygame.K_e:
+        elif e.key == pygame.K_e or e.key == pygame.K_SPACE:
             res = om.complete_order(self.idx, p.inventory); self.toggle(); return res
         return None
 
     def draw(self, surf, inv, om):
-        bw, bh = (800, 420) if self.is_open else (360, 160)
+        bw, bh = (840, 440) if self.is_open else (380, 170)
         rect = pygame.Rect(self.pos.x, self.pos.y, bw, bh)
-        s = pygame.Surface((bw, bh), pygame.SRCALPHA); pygame.draw.rect(s, (30,35,50,235), (0,0,bw,bh), border_radius=15)
-        surf.blit(s, rect); pygame.draw.rect(surf, (100,110,140), rect, 2, border_radius=15)
+        
+        if self.bg_panel:
+            surf.blit(pygame.transform.scale(self.bg_panel, (bw, bh)), rect)
+        else:
+            s = pygame.Surface((bw, bh), pygame.SRCALPHA); pygame.draw.rect(s, (30,35,50,235), (0,0,bw,bh), border_radius=15)
+            surf.blit(s, rect); pygame.draw.rect(surf, (100,110,140), rect, 2, border_radius=15)
+            
         if self.is_open: surf.blit(self.titles.render("FOUR À PIZZA", True, (255,215,100)), (rect.x+30, rect.y+20))
-        cw, ch = (230, 300) if self.is_open else (105, 120)
+        cw, ch = (240, 310) if self.is_open else (110, 125)
         sx, sy = rect.x + (40 if self.is_open else 20), rect.y + (80 if self.is_open else 25)
         for i, o in enumerate(om.active_orders):
             PizzaCard.render(surf, o, pygame.Rect(sx + i*(cw+(20 if self.is_open else 10)), sy, cw, ch), self, inv, i == self.idx)

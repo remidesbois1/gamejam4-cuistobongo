@@ -1,31 +1,41 @@
 import pygame
 import settings
+import random
 from inventory import Inventory
 
 class Player:
     def __init__(self, x, y, map_inst):
-        self.rect = pygame.Rect(x, y, 80, 80)
-        self.pos, self.vel, self.map = pygame.Vector2(x, y), 500, map_inst
+        self.rect = pygame.Rect(x, y, settings.PLAYER_SIZE, settings.PLAYER_SIZE)
+        self.pos, self.vel, self.map = pygame.Vector2(x, y), settings.PLAYER_SPEED, map_inst
         self.inventory, self.weapon = Inventory(3), "drum_weapon"
-        self.health, self.max_health = 100, 100
+        self.health, self.max_health = settings.PLAYER_HP, settings.PLAYER_HP
         self.inv_timer = 0
         self.last_dir = pygame.Vector2(1, 0)
         self.dash_timer = 0
         self.dash_vec = pygame.Vector2(0, 0)
         self.img_body, self.img_pan, self.legs, self.frame, self.anim_t = None, None, [], 0, 0
+        self.dmg_sounds = []
         try:
-            self.img_body = pygame.transform.scale(pygame.image.load("assets/chief_bomgo.png").convert_alpha(), (80, 80))
-            self.img_pan = pygame.transform.scale(pygame.image.load("assets/chief_pan.png").convert_alpha(), (80, 80))
-            self.img_sax = pygame.transform.scale(pygame.image.load("assets/chief_sax.png").convert_alpha(), (80, 80))
+            self.img_body = pygame.transform.scale(pygame.image.load("assets/chief_bomgo.png").convert_alpha(), (settings.PLAYER_SIZE, settings.PLAYER_SIZE))
+            self.img_pan = pygame.transform.scale(pygame.image.load("assets/chief_pan.png").convert_alpha(), (settings.PLAYER_SIZE, settings.PLAYER_SIZE))
+            self.img_sax = pygame.transform.scale(pygame.image.load("assets/chief_sax.png").convert_alpha(), (settings.PLAYER_SIZE, settings.PLAYER_SIZE))
             for i in [1, 2, 3]:
                 img = pygame.image.load(f"assets/LEG{i}.png").convert_alpha()
-                self.legs.append(pygame.transform.scale(img, (80, 60)))
+                self.legs.append(pygame.transform.scale(img, (settings.PLAYER_SIZE, 60)))
+            for i in [1, 2, 3, 4]:
+                s = pygame.mixer.Sound(f"assets/chief-degat{i}.wav")
+                s.set_volume(0.5)
+                self.dmg_sounds.append(s)
         except: pass
+        self.needs_shake = False
     
     def take_damage(self, amount):
         if self.inv_timer > 0 or self.dash_timer > 0: return False
         self.health -= amount
-        self.inv_timer = 0.5
+        self.inv_timer = settings.PLAYER_INV_TIME
+        self.needs_shake = True
+        if self.dmg_sounds:
+            random.choice(self.dmg_sounds).play()
         return self.health <= 0
 
     def respawn(self, x, y):
@@ -39,15 +49,15 @@ class Player:
     def start_dash(self, direction):
         if direction.length() == 0: direction = pygame.Vector2(1, 0)
         self.dash_vec = direction.normalize()
-        self.dash_timer = 0.2
-        self.inv_timer = 0.3
+        self.dash_timer = settings.PLAYER_DASH_TIME
+        self.inv_timer = settings.PLAYER_DASH_INV_TIME
 
     def handle_input(self, dt):
         if self.dash_timer > 0:
             self.dash_timer -= dt
-            self.pos += self.dash_vec * 1500 * dt
-            self.pos.x = max(0, min(self.pos.x, self.map.width - 80))
-            self.pos.y = max(0, min(self.pos.y, self.map.height - 80))
+            self.pos += self.dash_vec * settings.PLAYER_DASH_SPEED * dt
+            self.pos.x = max(0, min(self.pos.x, self.map.width - settings.PLAYER_SIZE))
+            self.pos.y = max(0, min(self.pos.y, self.map.height - settings.PLAYER_SIZE))
             self.rect.topleft = self.pos
             return
 
@@ -70,11 +80,16 @@ class Player:
             self.frame, self.anim_t = 0, 0
 
     def draw(self, surf, ox, oy):
-        pos = (self.rect.x - ox, self.rect.y - oy) # Body
+        pos = (self.rect.x - ox, self.rect.y - oy)
+
+        s = pygame.Surface((60, 20), pygame.SRCALPHA)
+        pygame.draw.ellipse(s, (0, 0, 0, 100), (0, 0, 60, 20))
+        surf.blit(s, (pos[0] + 10, pos[1] + 42))
+
         body = self.img_body
         if self.weapon == "pan_weapon" and self.img_pan: body = self.img_pan
         if self.weapon == "sax_weapon" and self.img_sax: body = self.img_sax
-        
+
         if body:
             surf.blit(body, (pos[0] - 2, pos[1] - 79))
         else:
@@ -82,5 +97,12 @@ class Player:
         
         if self.legs:
             surf.blit(self.legs[self.frame], pos)
-        elif not body: # This condition was `elif not img:` in the original, now `body` is the relevant variable.
+        elif not body:
             pygame.draw.rect(surf, settings.PLAYER_COLOR, (pos[0], pos[1], 80, 80))
+
+        bx, by = pos[0] + 10, pos[1] - 100
+        bw, bh = 60, 8
+        pygame.draw.rect(surf, (50, 0, 0), (bx, by, bw, bh), border_radius=2)
+        if self.health > 0:
+            pygame.draw.rect(surf, (0, 255, 0), (bx, by, int(bw * (self.health / self.max_health)), bh), border_radius=2)
+        pygame.draw.rect(surf, (0, 0, 0), (bx, by, bw, bh), 1, border_radius=2)

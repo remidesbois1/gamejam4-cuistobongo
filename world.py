@@ -36,7 +36,13 @@ class WorldManager:
             for r in [0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5]:
                 a = pygame.sndarray.array(f)
                 self.pan_sounds.append(pygame.sndarray.make_sound(a[np.round(np.linspace(0, len(a)-1, int(len(a)/r))).astype(int)]))
-            for snd in self.pan_sounds: snd.set_volume(0.4)
+            # Sax
+            sx = pygame.mixer.Sound("assets/saxo.wav")
+            self.sax_sounds = []
+            for r in [0.8, 1.0, 1.2]:
+                 a = pygame.sndarray.array(sx)
+                 self.sax_sounds.append(pygame.sndarray.make_sound(a[np.round(np.linspace(0, len(a)-1, int(len(a)/r))).astype(int)]))
+            for snd in self.sax_sounds: snd.set_volume(0.4)
         except: pass
 
     def is_safe(self, x, y, size):
@@ -63,15 +69,15 @@ class WorldManager:
             return True
             
         elif p.weapon == "pan_weapon":
-            self.cd = 1.0
+            self.cd = max(0.2, self.cd_limit * 2.5)
             p.start_dash(p.last_dir)
             if self.pan_sounds: random.choice(self.pan_sounds).play()
             return True
 
         elif p.weapon == "sax_weapon":
-            self.cd = 1.0
+            self.cd = max(0.2, self.cd_limit * 2.5)
             self.effs.append(ExplodingNote(p.rect.centerx, p.rect.centery, p.last_dir))
-            if self.pan_sounds: random.choice(self.pan_sounds).play() 
+            if self.sax_sounds: random.choice(self.sax_sounds).play() 
             return True
         
         return False

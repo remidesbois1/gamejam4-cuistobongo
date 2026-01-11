@@ -83,7 +83,17 @@ class Drop(Item):
     PATHS = {"tomato": "assets/tomato-icon.png", "cheese": "assets/fromage-icon.png", "dough": "assets/dough.png"}
     def __init__(self, x, y, drop_type): super().__init__(x, y, self.PATHS.get(drop_type, ""), 40, 40); self.type = drop_type
     def draw(self, surf, ox, oy, dim=None):
-        pos = (self.rect.x - ox, self.rect.y - oy + math.sin(pygame.time.get_ticks() * 0.005) * 10)
+        t = pygame.time.get_ticks() * 0.005
+        bob = math.sin(t)
+        
+        # Shadow
+        sc = 1.0 - 0.3 * bob # Shrink when high
+        sw, sh = int(30 * sc), int(10 * sc)
+        s = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        pygame.draw.ellipse(s, (0, 0, 0, 100), (0, 0, sw, sh))
+        surf.blit(s, (self.rect.centerx - sw//2 - ox, self.rect.bottom - sh//2 - oy + 10))
+
+        pos = (self.rect.x - ox, self.rect.y - oy + bob * 10)
         if self.image: surf.blit(self.image, pos)
         else: pygame.draw.circle(surf, (255, 255, 255), (int(pos[0] + 20), int(pos[1] + 20)), 15)
 

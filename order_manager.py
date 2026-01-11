@@ -1,4 +1,4 @@
-import random
+import random, pygame
 from recipe import RECIPES
 
 class Order:
@@ -23,6 +23,11 @@ class OrderManager:
             if o:
                 o.timer -= dt
                 if o.timer <= 0:
+                    try:
+                        s = pygame.mixer.Sound("assets/order-lost.mp3")
+                        s.set_volume(0.5)
+                        s.play()
+                    except: pass
                     score_change, self.active_orders[i] = score_change - int(o.recipe.points * 0.5), None
         if None in self.active_orders:
             self.spawn_timer += dt
