@@ -128,15 +128,10 @@ class Game:
                         self.full_id = id
                         try: self.icon = pygame.transform.scale(pygame.image.load(icon_path).convert_alpha(), (128, 128))
                         except: self.icon = None
-                
-                # Filter out current weapon to force change? Or keep it? The prompt implied randomness.
-                # Previous logic filtered `last_weapon`. Let's allow all or filter. 
-                # "choisit l'arme du prochain round." - implies random selection.
-                # I'll include all 3 options.
                 w_opts = [
-                    WeaponOpt("Tambour", "drum_weapon", "assets/drum.png"),
-                    WeaponOpt("Poêle", "pan_weapon", "assets/chief_pan.png"),
-                    WeaponOpt("Saxophone", "sax_weapon", "assets/chief_sax.png")
+                    WeaponOpt("Bongo", "drum_weapon", "assets/bongo.png"),
+                    WeaponOpt("Flûte de Pan", "pan_weapon", "assets/flute_of_pan.png"),
+                    WeaponOpt("Saxophone", "sax_weapon", "assets/saxo.png")
                 ]
                 
                 # Clone maluses for third roulette as placeholder

@@ -5,6 +5,8 @@ class ResourceManager:
     def __init__(self):
         self.res = []
         self.drops = []
+        try: self.break_sound = pygame.mixer.Sound("assets/drop.wav")
+        except: self.break_sound = None
 
     def spawn(self, safe_func, w, h):
         self.res.clear()
@@ -50,8 +52,12 @@ class ResourceManager:
 
     def check_hit(self, pos, damage, dim, radius=200):
         px, py = pos
+        played_sound = False
         for r in self.res[:]:
             if math.hypot(px - r.rect.centerx, py - r.rect.centery) < radius:
                 if r.take_damage(damage, dim):
                     self.drops.append(Drop(r.rect.x, r.rect.y, r.drop_type))
+                    if self.break_sound and not played_sound: 
+                        self.break_sound.play()
+                        played_sound = True
                     self.res.remove(r)

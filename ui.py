@@ -155,10 +155,11 @@ class UI:
             surface.blit(pen_txt, (cur_x, b_rect.centery - pen_txt.get_height()//2))
 
 class RouletteSlot:
-    def __init__(self, items, font, frame_title):
+    def __init__(self, items, font, frame_title, tick_sound=None):
         self.items = items
         self.font = font
         self.frame_title = frame_title
+        self.tick_sound = tick_sound
         self.current_idx = 0
         self.timer = 0
         self.speed = 0.05
@@ -174,6 +175,7 @@ class RouletteSlot:
             if self.timer > self.speed:
                 self.timer = 0
                 self.current_idx = (self.current_idx + 1) % len(self.items)
+                if self.tick_sound: self.tick_sound.play()
             
             if self.total_time > self.spin_duration:
                 self.state = 'SLOWING'
@@ -185,6 +187,7 @@ class RouletteSlot:
                 self.timer = 0
                 self.current_idx = (self.current_idx + 1) % len(self.items)
                 self.speed *= 1.2
+                if self.tick_sound: self.tick_sound.play()
                 
                 if self.speed > 0.4:
                     self.state = 'SHOWING'
@@ -233,12 +236,17 @@ class RouletteMenu:
         self.weapon_slot = None
         self.bonus_slot = None
         self.show_timer = 0
+        self.tick_sound = None
+        try: 
+            self.tick_sound = pygame.mixer.Sound("assets/casino.wav")
+            self.tick_sound.set_volume(0.3)
+        except: pass
 
     def start(self, maluses, weapons, bonuses):
         self.active = True
-        self.malus_slot = RouletteSlot(maluses, self.font, "Malus !")
-        self.weapon_slot = RouletteSlot(weapons, self.font, "Arme !")
-        self.bonus_slot = RouletteSlot(bonuses, self.font, "Bonus !")
+        self.malus_slot = RouletteSlot(maluses, self.font, "Malus !", self.tick_sound)
+        self.weapon_slot = RouletteSlot(weapons, self.font, "Arme !", self.tick_sound)
+        self.bonus_slot = RouletteSlot(bonuses, self.font, "Bonus !", self.tick_sound)
         self.show_timer = 0
 
     @property

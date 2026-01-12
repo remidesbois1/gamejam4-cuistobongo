@@ -22,7 +22,7 @@ class EnemyManager:
                     break
         
         # Tomatoes
-        for _ in range(25):
+        for _ in range(28):
             for _ in range(50):
                 ex, ey = random.uniform(300, w - 300), random.uniform(300, h - 300)
                 if safe_func(ex, ey, 80):
