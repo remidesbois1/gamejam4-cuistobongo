@@ -4,7 +4,7 @@ from player import Player
 from camera import Camera
 from world import WorldManager
 from menu import Menu
-from ui import UI
+from ui import UI, RouletteMenu
 from recipe_menu import RecipeMenu
 from order_manager import OrderManager
 from shop_menu import ShopMenu
@@ -25,22 +25,25 @@ class Game:
         self.malus_manager = None
         self.last_weapon = None
         self.death_timer = 0
+        self.roulette_menu = None
 
     def start(self):
         self.map, self.pizzas_made = Map(), 0
         self.player = Player(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2, self.map)
         
-        opts = ["drum_weapon", "pan_weapon", "sax_weapon"]
-        self.player.weapon = random.choice(opts)
+        # Force weapon to Bomgo (drum) for first round
+        self.player.weapon = "drum_weapon"
         self.last_weapon = self.player.weapon
         
         self.world = WorldManager(self.map)
         self.malus_manager = MalusManager(self.world)
         self.camera = Camera(settings.MAP_WIDTH, settings.MAP_HEIGHT)
-        self.ui, self.recipe_menu, self.shop_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font)
+        self.ui, self.recipe_menu, self.shop_menu, self.roulette_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font), RouletteMenu(self.font)
         self.score, self.f_a, self.wave_timer, self.wave_num, self.state = 0, 0, settings.WAVE_DURATION, 1, 'PLAYING'
         self.pizza_goal, self.round_p = settings.INITIAL_PIZZA_GOAL, 0
-        self.malus_manager.new_round()
+        
+        # Start game with NO MALUS
+        self.malus_manager.new_round(malus="NO_MALUS")
 
     def handle(self):
         if self.state == 'DYING': return
@@ -55,7 +58,7 @@ class Game:
                 if "INV" in self.cheat_buf: 
                     for k in self.player.inventory.counts: self.player.inventory.counts[k] = self.player.inventory.cap
                     self.cheat_buf = ""
-                if "SKIP" in self.cheat_buf: self.wave_timer, self.cheat_buf = 0, ""
+                if "SKIP" in self.cheat_buf: self.round_p, self.wave_timer, self.cheat_buf = self.pizza_goal, 0, ""
                 if "OVER" in self.cheat_buf: self.state, self.cheat_buf = 'GAME_OVER', ""
                 if "KILL" in self.cheat_buf: self.player.health, self.cheat_buf = 0, ""
                 if "HEAL" in self.cheat_buf: self.player.health, self.cheat_buf = self.player.max_health, ""
@@ -115,26 +118,52 @@ class Game:
                     self.state = 'GAME_OVER'
         elif self.state == 'SHOP':
             self.wave_timer -= dt
-            if self.wave_timer <= 0: 
-                self.state, self.wave_timer, self.wave_num = 'PLAYING', settings.WAVE_DURATION, self.wave_num + 1
-                self.pizza_goal += settings.PIZZA_GOAL_INCREMENT
-                self.round_p = 0
+            if self.wave_timer <= 0:
+                self.state = 'ROULETTE'
                 
-                self.world.dim = 1
-                self.player.respawn(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2)
+                # Helpers for weapon icons/names
+                class WeaponOpt:
+                    def __init__(self, name, id, icon_path):
+                        self.name = name
+                        self.full_id = id
+                        try: self.icon = pygame.transform.scale(pygame.image.load(icon_path).convert_alpha(), (128, 128))
+                        except: self.icon = None
                 
-                # New weapon selection
-                opts = [w for w in ["drum_weapon", "pan_weapon", "sax_weapon"] if w != self.last_weapon]
-                if not opts: opts = ["drum_weapon"]
-                self.player.weapon = random.choice(opts)
-                self.last_weapon = self.player.weapon
+                # Filter out current weapon to force change? Or keep it? The prompt implied randomness.
+                # Previous logic filtered `last_weapon`. Let's allow all or filter. 
+                # "choisit l'arme du prochain round." - implies random selection.
+                # I'll include all 3 options.
+                w_opts = [
+                    WeaponOpt("Tambour", "drum_weapon", "assets/drum.png"),
+                    WeaponOpt("Poêle", "pan_weapon", "assets/chief_pan.png"),
+                    WeaponOpt("Saxophone", "sax_weapon", "assets/chief_sax.png")
+                ]
                 
-                self.world.spawn()
-                self.world.enemy_manager.projectiles.clear()
-                self.world.res_manager.drops.clear()
-                
-                # Apply Malus
-                self.malus_manager.new_round()
+                # Clone maluses for third roulette as placeholder
+                self.roulette_menu.start(self.malus_manager.maluses, w_opts, self.malus_manager.maluses)
+
+        elif self.state == 'ROULETTE':
+             if self.roulette_menu.update(dt):
+                 # Roulette finished
+                 self.state, self.wave_timer, self.wave_num = 'PLAYING', settings.WAVE_DURATION, self.wave_num + 1
+                 self.pizza_goal += settings.PIZZA_GOAL_INCREMENT
+                 self.round_p = 0
+                 
+                 self.world.dim = 1
+                 self.player.respawn(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2)
+                 
+                 # Set Weapon
+                 sel_weap = self.roulette_menu.selected_weapon
+                 if sel_weap:
+                     self.player.weapon = sel_weap.full_id
+                     self.last_weapon = self.player.weapon
+                 
+                 self.world.spawn()
+                 self.world.enemy_manager.projectiles.clear()
+                 self.world.res_manager.drops.clear()
+                 
+                 # Apply Malus
+                 self.malus_manager.new_round(self.roulette_menu.selected_malus)
 
     def draw(self):
         if self.state == 'MENU': self.menu.draw()
@@ -164,6 +193,7 @@ class Game:
             if self.state != 'SHOP': self.recipe_menu.draw(self.screen, self.player.inventory, self.om)
             if self.world.dim == 1: self.ui.draw_arrow(self.screen, self.player.rect, self.world.oven.rect)
             if self.state == 'SHOP': self.shop_menu.draw(self.screen, self)
+            if self.state == 'ROULETTE': self.roulette_menu.draw(self.screen)
         pygame.display.flip()
     def run(self):
         while self.running:

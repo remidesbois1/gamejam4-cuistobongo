@@ -1,11 +1,14 @@
+import pygame
 import random
 from enemy import Squid, TomatoEnemy
 
 class Malus:
-    def __init__(self, name, description, func):
+    def __init__(self, name, description, func, icon_path):
         self.name = name
         self.description = description
         self.func = func
+        try: self.icon = pygame.transform.scale(pygame.image.load(icon_path).convert_alpha(), (128, 128))
+        except: self.icon = None
     
     def apply(self, world):
         self.func(world)
@@ -15,15 +18,15 @@ class MalusManager:
         self.world = world
         self.current_malus = None
         self.maluses = [
-            Malus("Invasion Gluante", "Des calamars ? Ici ?", self.malus_squid_invasion),
-            Malus("Cuisine dans l'Inconnu", "Comment s'est il retrouvé là ?", self.malus_oven_dimension),
-            Malus("Calamars Gourmands", "Yamete !", self.malus_giant_squids),
-            Malus("Tomates Perdues", "Les récoltes dans l'Upside Down !", self.malus_alien_tomatoes),
-            Malus("Objets Trouillards", "Je pue ou quoi ?", self.malus_fleeing_items),
-            Malus("Portails Pompettes", "Ils n'auraient pas dû absorber cette bouteille de Jack !", self.malus_moving_portals)
+            Malus("Invasion Gluante", "Des calamars ? Ici ?", self.malus_squid_invasion, "assets/malus_squid.png"),
+            Malus("Cuisine dans l'Inconnu", "Comment s'est il retrouvé là ?", self.malus_oven_dimension, "assets/malus_oven.png"),
+            Malus("Calamars Gourmands", "Yamete !", self.malus_giant_squids, "assets/malus_giant.png"),
+            Malus("Tomates Perdues", "Les récoltes dans l'Upside Down !", self.malus_alien_tomatoes, "assets/malus_tomato.png"),
+            Malus("Objets Trouillards", "Je pue ou quoi ?", self.malus_fleeing_items, "assets/malus_run.png"),
+            Malus("Portails Pompettes", "Ils n'auraient pas dû absorber cette bouteille de Jack !", self.malus_moving_portals, "assets/malus_portal.png")
         ]
     
-    def new_round(self):
+    def new_round(self, malus=None):
         self.world.oven.dim = 1
         self.world.items_flee = False
         
@@ -34,7 +37,15 @@ class MalusManager:
         for en in self.world.enemy_manager.enemies:
             if isinstance(en, TomatoEnemy): en.dim = 1
 
-        self.current_malus = random.choice(self.maluses)
+        if malus == "NO_MALUS":
+            self.current_malus = None
+            return
+            
+        if malus:
+            self.current_malus = malus
+        else:
+            self.current_malus = random.choice(self.maluses)
+        
         self.current_malus.apply(self.world)
     
     def malus_squid_invasion(self, world):

@@ -37,26 +37,46 @@ class UI:
         surface.blit(txt, (prect.x + 65, prect.y + 23))
 
         if malus:
-            # Malus Panel (Top Right, below inventory items logic if any, but let's put it top right specifically)
-            # Actually inventory is at top right. Let's move inventory panel down or put malus below it.
-            # Inventory is at settings.SCREEN_WIDTH - 240, 20
-            
-            # Put malus to the left of inventory or below.
-            # Let's put it below for now.
-            mw, mh = 220, 60
-            m_rect = pygame.Rect(settings.SCREEN_WIDTH - 240, 100, mw, mh)
-            
-            if self.bg_panel:
-                surface.blit(pygame.transform.scale(self.bg_panel, m_rect.size), m_rect)
-            
-            # Title
-            t_name = self.font.render(malus.name, True, (255, 100, 100))
-            surface.blit(t_name, (m_rect.centerx - t_name.get_width()//2, m_rect.y + 10))
-            
-            # Desc
-            # Simple word wap or just small text
-            t_desc = pygame.font.Font("assets/Handpixies.ttf", 16).render(malus.description, True, (200, 200, 200))
-            surface.blit(t_desc, (m_rect.centerx - t_desc.get_width()//2, m_rect.y + 35))
+            # Show only for first 20 seconds of the wave
+            # wave_timer counts down from WAVE_DURATION.
+            elapsed = settings.WAVE_DURATION - wave_timer
+            if elapsed < 20:
+                # Malus Panel (Top Right)
+                mw, mh = 220, 150 # Taller panel
+                m_rect = pygame.Rect(settings.SCREEN_WIDTH - 240, 100, mw, mh)
+                
+                if self.bg_panel:
+                    surface.blit(pygame.transform.scale(self.bg_panel, m_rect.size), m_rect)
+                
+                # Icon
+                if malus.icon:
+                     # Scale icon
+                     icon = pygame.transform.scale(malus.icon, (64, 64))
+                     surface.blit(icon, (m_rect.centerx - 32, m_rect.y + 10))
+                     
+                # Title
+                t_name = self.font.render(malus.name, True, (255, 100, 100))
+                surface.blit(t_name, (m_rect.centerx - t_name.get_width()//2, m_rect.y + 80))
+                
+                # Desc (multiline)
+                desc_font = pygame.font.Font("assets/Handpixies.ttf", 16)
+                words = malus.description.split(' ')
+                lines = []
+                cur_line = ""
+                for w in words:
+                    test_line = cur_line + w + " "
+                    if desc_font.size(test_line)[0] < mw - 20:
+                        cur_line = test_line
+                    else:
+                        lines.append(cur_line)
+                        cur_line = w + " "
+                lines.append(cur_line)
+                
+                dy = m_rect.y + 105
+                for l in lines:
+                    t_desc = desc_font.render(l, True, (200, 200, 200))
+                    surface.blit(t_desc, (m_rect.centerx - t_desc.get_width()//2, dy))
+                    dy += 18
 
         rect = pygame.Rect(settings.SCREEN_WIDTH - 240, 20, 220, 70)
         if self.bg_panel:
@@ -133,3 +153,141 @@ class UI:
             pen_txt = self.large_font.render("-30s", True, (160, 0, 0))
             self.large_font.set_bold(False)
             surface.blit(pen_txt, (cur_x, b_rect.centery - pen_txt.get_height()//2))
+
+class RouletteSlot:
+    def __init__(self, items, font, frame_title):
+        self.items = items
+        self.font = font
+        self.frame_title = frame_title
+        self.current_idx = 0
+        self.timer = 0
+        self.speed = 0.05
+        self.state = 'SPINNING'
+        self.total_time = 0
+        self.selected_item = None
+        self.spin_duration = random.uniform(1.5, 2.5) # Random spin time for desync
+
+    def update(self, dt):
+        if self.state == 'SPINNING':
+            self.total_time += dt
+            self.timer += dt
+            if self.timer > self.speed:
+                self.timer = 0
+                self.current_idx = (self.current_idx + 1) % len(self.items)
+            
+            if self.total_time > self.spin_duration:
+                self.state = 'SLOWING'
+                self.speed = 0.05
+        
+        elif self.state == 'SLOWING':
+            self.timer += dt
+            if self.timer > self.speed:
+                self.timer = 0
+                self.current_idx = (self.current_idx + 1) % len(self.items)
+                self.speed *= 1.2
+                
+                if self.speed > 0.4:
+                    self.state = 'SHOWING'
+                    self.selected_item = self.items[self.current_idx]
+                    self.timer = 0
+
+        elif self.state == 'SHOWING':
+            return True # Ready
+        return False
+
+    def draw(self, surf, center_x, center_y):
+        # Frame Title
+        t = self.font.render(self.frame_title, True, (0, 0, 0))
+        surf.blit(t, (center_x - t.get_width()//2, center_y - 100))
+
+        # Current Icon
+        item = self.items[self.current_idx]
+        
+        # Draw frame
+        pygame.draw.rect(surf, (0, 0, 0), (center_x - 70, center_y - 70, 140, 140), 4)
+        
+        icon = getattr(item, 'icon', None)
+        if hasattr(item, 'get'): # wrapper dict support if needed
+             icon = item.get('icon')
+
+        if icon:
+            surf.blit(icon, (center_x - 64, center_y - 64))
+        
+        # Name
+        color = (0, 0, 0) if self.state == 'SHOWING' else (100, 100, 100)
+        name = getattr(item, 'name', '')
+        nm = self.font.render(name, True, color)
+        surf.blit(nm, (center_x - nm.get_width()//2, center_y + 80))
+        
+        # Removed Desc from roulette slot as requested
+
+class RouletteMenu:
+    def __init__(self, font):
+        self.font = font
+        self.active = False
+        self.bg = None
+        try: self.bg = pygame.transform.scale(pygame.image.load("assets/recipe_menu.png").convert_alpha(), (900, 500)) # Wider bg
+        except: pass
+        self.title_font = pygame.font.Font("assets/Handpixies.ttf", 48)
+        self.malus_slot = None
+        self.weapon_slot = None
+        self.bonus_slot = None
+        self.show_timer = 0
+
+    def start(self, maluses, weapons, bonuses):
+        self.active = True
+        self.malus_slot = RouletteSlot(maluses, self.font, "Malus !")
+        self.weapon_slot = RouletteSlot(weapons, self.font, "Arme !")
+        self.bonus_slot = RouletteSlot(bonuses, self.font, "Bonus !")
+        self.show_timer = 0
+
+    @property
+    def selected_malus(self):
+        return self.malus_slot.selected_item if self.malus_slot else None
+    
+    @property
+    def selected_weapon(self):
+        return self.weapon_slot.selected_item if self.weapon_slot else None
+        
+    @property
+    def selected_bonus(self):
+        return self.bonus_slot.selected_item if self.bonus_slot else None
+
+    def update(self, dt):
+        if not self.active: return
+        
+        m_done = self.malus_slot.update(dt)
+        w_done = self.weapon_slot.update(dt)
+        b_done = self.bonus_slot.update(dt)
+        
+        if m_done and w_done and b_done:
+            self.show_timer += dt
+            if self.show_timer > 4.0: # Show result for 4 seconds (longer)
+                self.active = False
+                return True
+        return False
+
+    def draw(self, surf):
+        if not self.active: return
+        
+        # Overlay
+        overlay = pygame.Surface(surf.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        surf.blit(overlay, (0, 0))
+        
+        cw, ch = surf.get_width(), surf.get_height()
+        cx, cy = cw//2, ch//2
+
+        if self.bg:
+            r = self.bg.get_rect(center=(cx, cy))
+            surf.blit(self.bg, r)
+        else:
+            pygame.draw.rect(surf, (255, 255, 255), (cx - 450, cy - 250, 900, 500))
+        
+        t = self.title_font.render("Roulette du Destin !", True, (0, 0, 0))
+        surf.blit(t, (cx - t.get_width()//2, cy - 200))
+        
+        # Draw Slots (3 columns)
+        if self.malus_slot: self.malus_slot.draw(surf, cx - 250, cy)
+        if self.weapon_slot: self.weapon_slot.draw(surf, cx, cy)
+        if self.bonus_slot: self.bonus_slot.draw(surf, cx + 250, cy)
