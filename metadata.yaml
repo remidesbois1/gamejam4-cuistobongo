@@ -1,0 +1,35 @@
+# ----------------------------------
+# Méta données associées à votre jeu
+# metadata.yaml
+# - LES CHAMPS OBLIGATOIRES SONT INDIQUÉS PAR [!]
+# - NE SUPPRIMEZ PAS LES CHAMPS VIDES laissez par exemple,    abstract: "" 
+# ----------------------------------
+title: ""  # Le titre tel qu'il apparaîtra lors de la présentation
+abstract: "" # Résumé de votre jeu
+team:  "La Team Bamboo"  # Le nom de votre équipe tel qu'il apparaîtra à la présentation
+motto: "Mondher Chérif 2027 !" # Le slogan de votre équipe
+members:  # Liste des membres de l'équipe (ajoutez un bloc par membre)
+  # --- Premier membre ---
+  - firstname: "Tristan"   # Prénom
+    lastname:  "Sauvage"    # Nom
+    nickname: "DoyDoy Diovannah"          # Pseudo
+    group: "INF_S5_1A"        # Groupe de TP (Ex : INF_S2_3A)
+    bestgame: "Minecraft moddé"   # Jeu préféré de tous les temps
+    momentgame: "Forager / Resident Evil 4"         # Jeu préféré du moment
+    ostgame: "gusty garden galaxy (Mario galaxy 2)" # Bande son / musique de jeu vidéo préférée
+    character: "goomba"    # Personnage de jeu vidéo préféré
+  # --- Deuxième membre ---
+  - firstname: "Rémi"             # Prénom
+    lastname: "Semenzin"               # Nom
+    nickname: "Semenzini Bananini"                   # Pseudo
+    group: "INF_S5_1A"                  # Groupe de TP (Ex : INF_S4_2B)
+    bestgame: "Minecraft"                    # Jeu préféré de tous les temps
+    momentgame: "Valorant" # Jeu préféré du moment
+    ostgame: "Beneath the mask (Persona 5)"     # Bande son / musique de jeu vidéo préférée
+    character: "JackassParow"                # Personnage préféré
+engine: "Pygame" # Moteur de jeu utilisé (exemples : "Pygame" "Phaser" "Godot" "Unity" "Unreal" "Custom/Python" "Custom/Javascript")
+credits:
+  - audio: ""                          # Audio
+  - graphics: ""                       # Graphismes
+  - thanks: "" # Remerciements
+message: "Désolé du retard" # Information ou message à ajouter, et qui ne correspondait à aucun item de ce template
