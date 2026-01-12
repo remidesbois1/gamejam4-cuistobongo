@@ -15,6 +15,7 @@ class WorldManager:
         self.portals = [Portal(x, y) for x, y in ps]
         self.oven = PizzaOven(w//2-60, h//2-60)
         self.weaps = []
+        self.items_flee = False
         
         self.enemy_manager = EnemyManager()
         self.res_manager = ResourceManager()
@@ -108,18 +109,18 @@ class WorldManager:
                 break
         if not coll: self.in_p = False
         
-        if self.dim == 1:
+        if self.dim == self.oven.dim:
             self.oven.update(p.rect)
         
-        self.res_manager.update(dt, p, self.dim)
-        self.enemy_manager.update(dt, p, self.dim, portals=self.portals, oven_pos=pygame.Vector2(self.oven.rect.center))
+        self.res_manager.update(dt, p, self.dim, items_flee=self.items_flee)
+        self.enemy_manager.update(dt, p, self.dim, portals=self.portals, oven_pos=pygame.Vector2(self.oven.rect.center), oven_dim=self.oven.dim, items_flee=self.items_flee)
         return False
 
     def draw(self, s, ox, oy):
         self.map.draw(s, ox, oy, self.dim)
         self.res_manager.draw(s, ox, oy, self.dim)
         
-        if self.dim == 1: 
+        if self.dim == self.oven.dim: 
             self.oven.draw(s, ox, oy)
             [w.draw(s, ox, oy) for w in self.weaps]
             

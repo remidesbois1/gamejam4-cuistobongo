@@ -1,8 +1,9 @@
 import pygame, math, random, settings
 
 class Projectile:
-    def __init__(self, x, y, target_pos, dim=0):
-        self.rect = pygame.Rect(x, y, settings.PROJECTILE_SIZE, settings.PROJECTILE_SIZE)
+    def __init__(self, x, y, target_pos, dim=0, big=False):
+        size = settings.PROJECTILE_SIZE * (3 if big else 1)
+        self.rect = pygame.Rect(x, y, size, size)
         self.pos = pygame.Vector2(x, y)
         self.dim = dim
         direction = target_pos - self.pos
@@ -14,7 +15,7 @@ class Projectile:
             angle = 0
         self.timer = 0
         try: 
-            base = pygame.transform.scale(pygame.image.load("assets/medusa.png").convert_alpha(), (settings.PROJECTILE_SIZE, settings.PROJECTILE_SIZE))
+            base = pygame.transform.scale(pygame.image.load("assets/medusa.png").convert_alpha(), (size, size))
             self.image = pygame.transform.rotate(base, angle)
         except: self.image = None
 
@@ -26,18 +27,23 @@ class Projectile:
 
     def draw(self, surf, ox, oy):
         if self.image: surf.blit(self.image, (self.rect.centerx - self.image.get_width()//2 - ox, self.rect.centery - self.image.get_height()//2 - oy))
-        else: pygame.draw.circle(surf, (255, 0, 255), (self.rect.centerx - ox, self.rect.centery - oy), settings.PROJECTILE_SIZE//2)
+        else: pygame.draw.circle(surf, (255, 0, 255), (self.rect.centerx - ox, self.rect.centery - oy), self.rect.width//2)
 
 class Squid:
-    def __init__(self, x, y, dim=0):
-        self.rect = pygame.Rect(x, y, settings.SQUID_SIZE, settings.SQUID_SIZE)
+    def __init__(self, x, y, dim=0, giant=False):
+        self.giant = giant
+        size = settings.SQUID_SIZE * (3 if giant else 1)
+        self.rect = pygame.Rect(x, y, size, size)
         self.pos = pygame.Vector2(x, y)
         self.shoot_cd = random.uniform(0, 2)
-        try: self.image = pygame.transform.scale(pygame.image.load("assets/squid.png").convert_alpha(), (settings.SQUID_SIZE, settings.SQUID_SIZE))
+        try: self.image = pygame.transform.scale(pygame.image.load("assets/squid.png").convert_alpha(), (size, size))
         except: self.image = None
         self.move_state, self.move_timer = 'WANDER', 0
         self.wander_vec = pygame.Vector2(0, 0)
         self.hp, self.max_hp, self.hit_timer = settings.SQUID_HP, settings.SQUID_HP, 0
+        if giant:
+            self.hp *= 4.5
+            self.max_hp *= 4.5
         self.dim = dim
     
     def take_damage(self, amount):
@@ -106,7 +112,7 @@ class Squid:
                 self.shoot_cd -= dt
                 if self.shoot_cd <= 0 and dist < settings.SQUID_SHOOT_DIST:
                     self.shoot_cd = 2.0
-                    projectiles_list.append(Projectile(self.rect.centerx - 24, self.rect.centery - 24, pygame.Vector2(player_rect.center), dim=self.dim))
+                    projectiles_list.append(Projectile(self.rect.centerx - 24, self.rect.centery - 24, pygame.Vector2(player_rect.center), dim=self.dim, big=self.giant))
              else:
                 # Random movement only
                 vel = self.wander_vec * 100
@@ -116,7 +122,8 @@ class Squid:
 
     def draw(self, surf, ox, oy):
         # Shadow
-        sw, sh = int(settings.SQUID_SIZE * 0.7), int(settings.SQUID_SIZE // 3 * 0.7)
+        sz = self.rect.width
+        sw, sh = int(sz * 0.7), int(sz // 3 * 0.7)
         s = pygame.Surface((sw, sh), pygame.SRCALPHA)
         pygame.draw.ellipse(s, (0, 0, 0, 100), (0, 0, sw, sh))
         surf.blit(s, (self.rect.centerx - sw//2 - ox, self.rect.bottom - sh//2 - oy))
@@ -124,12 +131,12 @@ class Squid:
         if self.image:
             if self.hit_timer > 0:
                 sq = (self.hit_timer / 0.2) * 0.3
-                nw, nh = int(settings.SQUID_SIZE * (1 + sq * 0.5)), int(settings.SQUID_SIZE * (1 - sq))
+                nw, nh = int(sz * (1 + sq * 0.5)), int(sz * (1 - sq))
                 img = pygame.transform.scale(self.image, (nw, nh))
                 surf.blit(img, (self.rect.centerx - nw//2 - ox, self.rect.bottom - nh - oy))
             else:
                 surf.blit(self.image, (self.rect.x - ox, self.rect.y - oy))
-        else: pygame.draw.rect(surf, (200, 0, 200), (self.rect.x - ox, self.rect.y - oy, settings.SQUID_SIZE, settings.SQUID_SIZE))
+        else: pygame.draw.rect(surf, (200, 0, 200), (self.rect.x - ox, self.rect.y - oy, sz, sz))
         
         if self.hp < self.max_hp:
             rx, ry = self.rect.x - ox + 12, self.rect.y - oy - 10

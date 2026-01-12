@@ -29,11 +29,11 @@ class EnemyManager:
                     self.enemies.append(TomatoEnemy(ex, ey))
                     break
 
-    def update(self, dt, player, dim, portals=[], oven_pos=None):
+    def update(self, dt, player, dim, portals=[], oven_pos=None, oven_dim=1, items_flee=False):
         for en in self.enemies:
             target_dim = getattr(en, 'dim', 1 if isinstance(en, TomatoEnemy) else 0)
             
-            if oven_pos and target_dim == 1:
+            if oven_pos and target_dim == oven_dim:
                  dist_to_oven = en.pos.distance_to(oven_pos)
                  safe_radius = settings.OVEN_SAFE_ZONE_RADIUS + 15
                  if dist_to_oven < safe_radius:
@@ -59,7 +59,7 @@ class EnemyManager:
                 
             if oven_pos:
                  target_dim = getattr(proj, 'dim', 0)
-                 if target_dim == 1:
+                 if target_dim == oven_dim:
                      if proj.pos.distance_to(oven_pos) < settings.OVEN_SAFE_ZONE_RADIUS + 20:
                          try: self.projectiles.remove(proj)
                          except: pass
@@ -71,6 +71,17 @@ class EnemyManager:
                  try: self.projectiles.remove(proj)
                  except: pass
 
+        for d in self.drops[:]:
+            target_dim = getattr(d, 'dim', 1) 
+            if items_flee and dim == target_dim:
+                d.update(dt, player.rect)
+                
+            if d.type == "tomato":
+                 # Check correct dimension
+                 target_dim = getattr(d, 'dim', 1) 
+                 if dim == target_dim and player.rect.colliderect(d.rect):
+                    if player.inventory.add_item(d.type): self.drops.remove(d)
+
     def draw(self, surf, ox, oy, dim):
         for en in self.enemies:
             target_dim = getattr(en, 'dim', 1 if isinstance(en, TomatoEnemy) else 0)
@@ -81,7 +92,7 @@ class EnemyManager:
             if dim == target_dim: proj.draw(surf, ox, oy)
             
         for d in self.drops:
-            if d.type == "tomato" and dim == 1: d.draw(surf, ox, oy)
+            if d.type == "tomato" and dim == d.dim: d.draw(surf, ox, oy)
 
     def check_hit(self, pos, damage, dim, radius=200):
         px, py = pos
@@ -92,5 +103,5 @@ class EnemyManager:
             if math.hypot(px - en.rect.centerx, py - en.rect.centery) < radius:
                 if en.take_damage(damage):
                     if hasattr(en, 'drop_type') and en.drop_type:
-                        self.drops.append(Drop(en.rect.x, en.rect.y, en.drop_type))
+                        self.drops.append(Drop(en.rect.x, en.rect.y, en.drop_type, dim=target_dim))
                     self.enemies.remove(en)

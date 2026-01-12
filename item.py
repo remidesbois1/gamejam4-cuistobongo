@@ -81,13 +81,12 @@ class Tree(Resource):
 
 class Drop(Item):
     PATHS = {"tomato": "assets/tomato-icon.png", "cheese": "assets/fromage-icon.png", "dough": "assets/dough.png"}
-    def __init__(self, x, y, drop_type): super().__init__(x, y, self.PATHS.get(drop_type, ""), 40, 40); self.type = drop_type
+    def __init__(self, x, y, drop_type, dim=1): super().__init__(x, y, self.PATHS.get(drop_type, ""), 40, 40); self.type = drop_type; self.dim = dim
     def draw(self, surf, ox, oy, dim=None):
         t = pygame.time.get_ticks() * 0.005
         bob = math.sin(t)
         
-        # Shadow
-        sc = 1.0 - 0.3 * bob # Shrink when high
+        sc = 1.0 - 0.3 * bob
         sw, sh = int(30 * sc), int(10 * sc)
         s = pygame.Surface((sw, sh), pygame.SRCALPHA)
         pygame.draw.ellipse(s, (0, 0, 0, 100), (0, 0, sw, sh))
@@ -96,6 +95,17 @@ class Drop(Item):
         pos = (self.rect.x - ox, self.rect.y - oy + bob * 10)
         if self.image: surf.blit(self.image, pos)
         else: pygame.draw.circle(surf, (255, 255, 255), (int(pos[0] + 20), int(pos[1] + 20)), 15)
+
+    def update(self, dt, player_rect):
+        center = pygame.Vector2(self.rect.center)
+        p_center = pygame.Vector2(player_rect.center)
+        dist = center.distance_to(p_center)
+        if dist < 500:
+            diff = center - p_center
+            if diff.length() > 0:
+                vel = diff.normalize() * 90
+                center += vel * dt
+                self.rect.center = center
 
 class DrumItem(Item):
     def __init__(self, x, y): super().__init__(x, y, "assets/drum.png", 64, 64); self.type = "drum_weapon"

@@ -4,6 +4,7 @@ class PizzaOven:
     def __init__(self, x, y):
         self.w, self.h = 130, 160
         self.rect = pygame.Rect(x, y, self.w, self.h)
+        self.dim = 1
         self.active = False
         try:
             self.image = pygame.transform.scale(pygame.image.load("assets/oven.png").convert_alpha(), (self.w, self.h))
