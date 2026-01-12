@@ -1,4 +1,4 @@
-import pygame
+import pygame, math
 import settings
 import random
 from inventory import Inventory
@@ -38,6 +38,33 @@ class Player:
     def add_tomb(self, dim):
         self.tombs.append((pygame.Vector2(self.rect.topleft), dim))
 
+    
+    
+    def on_death(self):
+        self.death_debris = []
+        PATHS = {"tomato": "assets/tomato-icon.png", "cheese": "assets/fromage-icon.png", "dough": "assets/dough.png"}
+        
+        center = pygame.Vector2(self.rect.centerx, self.rect.centery)
+        for k, count in self.inventory.counts.items():
+             for _ in range(count):
+                 # Random target position around player
+                 dist = random.uniform(60, 200)
+                 angle = random.uniform(0, math.pi * 2)
+                 target = center + pygame.Vector2(math.cos(angle) * dist, math.sin(angle) * dist)
+                 
+                 path = PATHS.get(k, None)
+                 if path:
+                     try:
+                         img = pygame.transform.scale(pygame.image.load(path).convert_alpha(), (40, 40))
+                         # Store origin, target, and image
+                         self.death_debris.append({
+                             'origin': center.copy(), 
+                             'target': target, 
+                             'img': img,
+                             'rot': random.uniform(-20, 20)
+                         })
+                     except: pass
+
     def draw_death(self, surf, ox, oy, timer, dim):
         # Draw existing tombs
         for t_pos, t_dim in self.tombs:
@@ -45,7 +72,26 @@ class Player:
                 surf.blit(self.img_tomb, (t_pos.x - ox, t_pos.y - oy))
 
         pos = (self.rect.x - ox, self.rect.y - oy)
-        
+
+        # Debris Animation
+        if hasattr(self, 'death_debris'):
+            # Calculate progress (scatter takes 0.5s)
+            t = min(1.0, timer / 0.5)
+            # Ease out cubic
+            ease = 1 - pow(1 - t, 3)
+            
+            for d in self.death_debris:
+                cur_pos = d['origin'].lerp(d['target'], ease)
+                draw_pos = (cur_pos.x - ox, cur_pos.y - oy)
+                
+                # Shadow
+                s = pygame.Surface((30, 10), pygame.SRCALPHA)
+                pygame.draw.ellipse(s, (0, 0, 0, 80), (0, 0, 30, 10))
+                surf.blit(s, (draw_pos[0] + 5, draw_pos[1] + 30))
+                
+                # Item
+                surf.blit(d['img'], draw_pos)
+
         # Dead Body Phase (Hide when crushed)
         if timer < 1.4:
             if self.img_broken_leg: surf.blit(self.img_broken_leg, pos)
@@ -130,13 +176,22 @@ class Player:
         if self.weapon == "pan_weapon" and self.img_pan: body = self.img_pan
         if self.weapon == "sax_weapon" and self.img_sax: body = self.img_sax
 
+        alpha = 255
+        if self.inv_timer > 0:
+            if int(self.inv_timer * 15) % 2 == 0: alpha = 90
+
         if body:
+            body.set_alpha(alpha)
             surf.blit(body, (pos[0] - 2, pos[1] - 79))
+            body.set_alpha(255)
         else:
             pygame.draw.rect(surf, (255, 0, 0), (self.rect.x - ox, self.rect.y - oy, 80, 80))
         
         if self.legs:
-            surf.blit(self.legs[self.frame], pos)
+            lg = self.legs[self.frame]
+            lg.set_alpha(alpha)
+            surf.blit(lg, pos)
+            lg.set_alpha(255)
         elif not body:
             pygame.draw.rect(surf, settings.PLAYER_COLOR, (pos[0], pos[1], 80, 80))
 

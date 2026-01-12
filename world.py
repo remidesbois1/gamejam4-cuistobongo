@@ -36,6 +36,7 @@ class WorldManager:
             for r in [0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5]:
                 a = pygame.sndarray.array(f)
                 self.pan_sounds.append(pygame.sndarray.make_sound(a[np.round(np.linspace(0, len(a)-1, int(len(a)/r))).astype(int)]))
+            for snd in self.pan_sounds: snd.set_volume(0.5)
             # Sax
             sx = pygame.mixer.Sound("assets/saxo.wav")
             self.sax_sounds = []
@@ -88,19 +89,17 @@ class WorldManager:
         for e in self.effs[:]:
             e.update(dt)
             
-            # Handle Sax Explosion
             if isinstance(e, ExplodingNote) and e.explode_triggered:
                 self.res_manager.check_hit((e.pos.x, e.pos.y), 3, self.dim, radius=180)
                 self.enemy_manager.check_hit((e.pos.x, e.pos.y), 35, self.dim, radius=180)
-                # Spawn particles
                 for _ in range(22): self.effs.append(NoteParticle(e.pos.x, e.pos.y, e.color))
 
             if e.done: self.effs.remove(e)
             
         if p.dash_timer > 0:
             if random.random() < 0.3: self.effs.append(MusicNote(p.rect.centerx, p.rect.centery))
-            self.res_manager.check_hit(p.rect.center, 2, self.dim, radius=60)
-            self.enemy_manager.check_hit(p.rect.center, 20, self.dim, radius=60)
+            self.res_manager.check_hit(p.rect.center, 2, self.dim, radius=100)
+            self.enemy_manager.check_hit(p.rect.center, 20, self.dim, radius=100)
 
         for po in self.portals:
             if p.rect.colliderect(po.rect):

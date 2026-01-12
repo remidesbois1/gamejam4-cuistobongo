@@ -86,6 +86,7 @@ class Game:
         elif self.state == 'PLAYING':
             if not self.recipe_menu.is_open: self.player.handle_input(dt)
             if self.player.health <= 0:
+                self.player.on_death()
                 self.state = 'DYING'
                 self.death_timer = 0
                 return # Skip rest of update
