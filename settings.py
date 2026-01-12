@@ -46,3 +46,46 @@ SHOP_DURATION = 20
 INITIAL_PIZZA_GOAL = 3
 PIZZA_GOAL_INCREMENT = 2
 UPGRADE_COST = 2
+DEATH_PENALTY_TIME = 30
+DEATH_PIZZA_PENALTY_DIVISOR = 2
+DEATH_ANIMATION_DURATION = 6.0
+DEATH_MSG_FLY_SPEED = 1.5
+DEATH_DRAIN_SPEED = 1.5
+
+# UI Texts
+TEXT_WAVE = "VAGUE"
+TEXT_SCORE = "SCORE"
+TEXT_WAITING = "EN ATTENTE..."
+TEXT_EMPTY = "VIDE"
+TEXT_VALIDATE = "VALIDER !"
+TEXT_OVEN_TITLE = "FOUR À PIZZA"
+TEXT_SHOP_TITLE = "PAUSE CUISINE - AMÉLIORATIONS"
+TEXT_SKIP_BTN = "PASSER >"
+TEXT_SHOP_RESUME = "Reprise dans: {}s"
+TEXT_SHOP_BUY = "Appuyer sur E ou ESPACE"
+TEXT_GAME_OVER = "GAME OVER"
+TEXT_RETURN_MENU = "PRESS ESPACE TO RETURN TO MENU"
+
+# Colors
+CLR_UI_PANEL = (30, 35, 50)
+CLR_UI_BORDER = (100, 110, 140)
+CLR_TEXT_MAIN = (255, 255, 255)
+CLR_TEXT_GOLD = (255, 215, 100)
+CLR_TEXT_CREAM = (255, 230, 200)
+CLR_BTN_RED = (150, 50, 50)
+CLR_BTN_RED_HOVER = (200, 70, 70)
+CLR_CARD_BG = (50, 55, 75)
+CLR_CARD_ACTIVE = (70, 75, 100)
+CLR_VALID_GREEN = (0, 180, 0)
+CLR_INVALID_RED = (220, 0, 0)
+CLR_PRICE_GREEN = (100, 255, 100)
+CLR_PRICE_RED = (255, 100, 100)
+
+# Upgrade Config
+UPGRADE_DEFS = {
+    "speed": {"name": "Vitesse", "desc": "+25 Vitesse", "cost": 2, "val": 25},
+    "cap": {"name": "Sac à dos", "desc": "+1 Capacité", "cost": 2, "val": 1},
+    "atk_speed": {"name": "Vitesse attaque", "desc": "-0.05s Recharge", "cost": 2, "val": 0.05},
+    "damage": {"name": "Force", "desc": "+1 Dégâts", "cost": 2, "val": 1},
+    "time": {"name": "Patience", "desc": "+10% Temps", "cost": 2, "val": 0.1},
+}

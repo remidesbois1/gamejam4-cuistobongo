@@ -31,7 +31,7 @@ class PizzaCard:
         txt_col = (50, 30, 10) if menu.bg_paper else (255, 230, 0)
         
         if not o:
-            t = menu.small.render("EN ATTENTE..." if menu.is_open else "VIDE", True, (100,100,120) if menu.bg_paper else (80,85,110))
+            t = menu.small.render(settings.TEXT_WAITING if menu.is_open else settings.TEXT_EMPTY, True, (100,100,120) if menu.bg_paper else (80,85,110))
             surf.blit(t, (draw_rect.centerx-t.get_width()//2, draw_rect.centery-t.get_height()//2)); return
 
         iy = draw_rect.y + (20 if menu.is_open else 10)
@@ -48,7 +48,7 @@ class PizzaCard:
         pygame.draw.rect(surf, (255,200,0) if p > 0.3 else (255,50,50), (draw_rect.x+20, by, int((draw_rect.w-40)*p), 6), border_radius=3)
         
         if menu.is_open:
-            st = menu.small.render(f"SCORE: {int(o.recipe.points * max(0.5, p))} pts", True, txt_col)
+            st = menu.small.render(f"{settings.TEXT_SCORE}: {int(o.recipe.points * max(0.5, p))} pts", True, txt_col)
             surf.blit(st, (draw_rect.centerx-st.get_width()//2, iy+135))
 
         ings = [ing for ing in ["dough", "tomato", "cheese"] if o.recipe.ingredients.get(ing, 0) > 0]
@@ -64,7 +64,7 @@ class PizzaCard:
                 out = menu.nums.render(txt_str, True, (255, 255, 255))
                 surf.blit(out, (x + iscl//2 - out.get_width()//2 + ox, iy_ing + iscl + oy - 5))
             
-            q_col = (200, 0, 0) if (not menu.is_open and has < need) else (0, 0, 0)
+            q_col = (200, 0, 0) if has < need else (0, 0, 0)
             qty = menu.nums.render(txt_str, True, q_col)
             surf.blit(qty, (x + iscl//2 - qty.get_width()//2, iy_ing + iscl - 5))
             
@@ -77,7 +77,7 @@ class PizzaCard:
 
         if menu.is_open and inv.has_ingredients(o.recipe.ingredients):
             pygame.draw.rect(surf, (255,180,0), (draw_rect.x, draw_rect.bottom-40, draw_rect.w, 40), border_radius=10)
-            vt = menu.small.render("VALIDER !", True, (0,0,0)); surf.blit(vt, (draw_rect.centerx-vt.get_width()//2, draw_rect.bottom-30))
+            vt = menu.small.render(settings.TEXT_VALIDATE, True, (0,0,0)); surf.blit(vt, (draw_rect.centerx-vt.get_width()//2, draw_rect.bottom-30))
 
 class RecipeMenu:
     def __init__(self, font):
@@ -105,7 +105,16 @@ class RecipeMenu:
         if e.key in [pygame.K_LEFT, pygame.K_q]: self.idx = (self.idx - 1) % 3
         elif e.key in [pygame.K_RIGHT, pygame.K_d]: self.idx = (self.idx + 1) % 3
         elif e.key == pygame.K_e or e.key == pygame.K_SPACE:
-            res = om.complete_order(self.idx, p.inventory); self.toggle(); return res
+            if om.active_orders[self.idx] is None:
+                self.toggle()
+                return None
+            
+            res = om.complete_order(self.idx, p.inventory)
+            if res and res > 0:
+                return res
+            else:
+                self.toggle()
+                return None
         return None
 
     def draw(self, surf, inv, om):
@@ -118,7 +127,7 @@ class RecipeMenu:
             s = pygame.Surface((bw, bh), pygame.SRCALPHA); pygame.draw.rect(s, (30,35,50,235), (0,0,bw,bh), border_radius=15)
             surf.blit(s, rect); pygame.draw.rect(surf, (100,110,140), rect, 2, border_radius=15)
             
-        if self.is_open: surf.blit(self.titles.render("FOUR À PIZZA", True, (255,215,100)), (rect.x+30, rect.y+20))
+        if self.is_open: surf.blit(self.titles.render(settings.TEXT_OVEN_TITLE, True, settings.CLR_TEXT_GOLD), (rect.x+30, rect.y+20))
         cw, ch = (240, 310) if self.is_open else (110, 125)
         sx, sy = rect.x + (40 if self.is_open else 20), rect.y + (80 if self.is_open else 25)
         for i, o in enumerate(om.active_orders):

@@ -29,24 +29,20 @@ class EnemyManager:
                     self.enemies.append(TomatoEnemy(ex, ey))
                     break
 
-    def update(self, dt, player, dim):
+    def update(self, dt, player, dim, portals=[]):
         for en in self.enemies:
-            # Squid (0) or Tomato (1)
             target = 1 if isinstance(en, TomatoEnemy) else 0
 
-            # FORCE Update for Squids even if in wrong dimension, to make them wander
             if isinstance(en, Squid):
-                en.update(dt, player.rect, self.projectiles, self.enemies, player_visible=(dim==0))
-                # Only check collision if in correct dim
+                en.update(dt, player.rect, self.projectiles, self.enemies, player_visible=(dim==0), portals=portals)
                 if dim == target and en.rect.colliderect(player.rect):
                     player.take_damage(5)
 
-            elif dim == target: # Tomatoes
+            elif dim == target:
                 en.update(dt, player.rect, self.projectiles, self.enemies)
                 if en.rect.colliderect(player.rect):
                     player.take_damage(5)
             
-        # Projectiles (Medusa) - Always update
         for proj in self.projectiles[:]:
             if proj.update(dt):
                 self.projectiles.remove(proj)
@@ -55,8 +51,7 @@ class EnemyManager:
                 player.take_damage(10)
                 try: self.projectiles.remove(proj)
                 except: pass
-                
-        # Drops
+
         for d in self.drops[:]:
             if d.type == "tomato":
                 if dim == 1 and player.rect.colliderect(d.rect):

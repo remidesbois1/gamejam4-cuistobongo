@@ -26,8 +26,43 @@ class Player:
                 s = pygame.mixer.Sound(f"assets/chief-degat{i}.wav")
                 s.set_volume(0.5)
                 self.dmg_sounds.append(s)
+            
+            # Death Assets
+            self.img_dead = pygame.transform.scale(pygame.image.load("assets/chief_dead.png").convert_alpha(), (settings.PLAYER_SIZE, settings.PLAYER_SIZE))
+            self.img_broken_leg = pygame.transform.scale(pygame.image.load("assets/BROKEN_LEG.png").convert_alpha(), (settings.PLAYER_SIZE, 60))
+            self.img_tomb = pygame.transform.scale(pygame.image.load("assets/tombe.png").convert_alpha(), (settings.PLAYER_SIZE, settings.PLAYER_SIZE))
         except: pass
         self.needs_shake = False
+        self.tombs = []
+    
+    def add_tomb(self, dim):
+        self.tombs.append((pygame.Vector2(self.rect.topleft), dim))
+
+    def draw_death(self, surf, ox, oy, timer, dim):
+        # Draw existing tombs
+        for t_pos, t_dim in self.tombs:
+            if t_dim == dim:
+                surf.blit(self.img_tomb, (t_pos.x - ox, t_pos.y - oy))
+
+        pos = (self.rect.x - ox, self.rect.y - oy)
+        
+        # Dead Body Phase (Hide when crushed)
+        if timer < 1.4:
+            if self.img_broken_leg: surf.blit(self.img_broken_leg, pos)
+            # Offset body higher like normal
+            if self.img_dead: surf.blit(self.img_dead, (pos[0], pos[1] - 79))
+        
+        # Tomb Phase
+        if timer > 1.0 and self.img_tomb:
+            # Fall animation
+            progress = min(1.0, (timer - 1.0) / 0.4)
+            start_y = -300
+            end_y = pos[1]
+            
+            # Ease in out
+            cur_y = start_y + (end_y - start_y) * (progress * progress)
+            
+            surf.blit(self.img_tomb, (pos[0], cur_y))
     
     def take_damage(self, amount):
         if self.inv_timer > 0 or self.dash_timer > 0: return False
@@ -79,7 +114,12 @@ class Player:
         else:
             self.frame, self.anim_t = 0, 0
 
-    def draw(self, surf, ox, oy):
+    def draw(self, surf, ox, oy, dim):
+        # Draw persistent tombs
+        for t_pos, t_dim in self.tombs:
+            if t_dim == dim and self.img_tomb:
+                surf.blit(self.img_tomb, (t_pos.x - ox, t_pos.y - oy))
+
         pos = (self.rect.x - ox, self.rect.y - oy)
 
         s = pygame.Surface((60, 20), pygame.SRCALPHA)

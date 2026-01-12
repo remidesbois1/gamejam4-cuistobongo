@@ -113,7 +113,7 @@ class WorldManager:
             self.oven.update(p.rect)
         
         self.res_manager.update(dt, p, self.dim)
-        self.enemy_manager.update(dt, p, self.dim)
+        self.enemy_manager.update(dt, p, self.dim, portals=self.portals)
         return False
 
     def draw(self, s, ox, oy):

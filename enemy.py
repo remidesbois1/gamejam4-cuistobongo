@@ -44,7 +44,7 @@ class Squid:
         self.hit_timer = 0.2
         return self.hp <= 0
         
-    def update(self, dt, player_rect, projectiles_list, others, player_visible=True):
+    def update(self, dt, player_rect, projectiles_list, others, player_visible=True, portals=[]):
         self.hit_timer = max(0, self.hit_timer - dt)
         
         # Separation logic
@@ -55,52 +55,59 @@ class Squid:
                 if d < 80:
                     diff = self.pos - o.pos
                     if diff.length() > 0: sep += diff.normalize() * (200 / max(1, d))
-        
-        # If player not visible, force random wander
-        force_wander = not player_visible
-        
-        if force_wander or random.random() < 0.03:
-            if self.move_state != 'WANDER' or force_wander: # Ensure we are wandering
-                 if force_wander and self.move_state == 'WANDER' and self.move_timer > 0: pass
-                 else:
-                    self.wander_vec = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
-                    self.move_timer = 0.5 if not force_wander else random.uniform(0.5, 1.5)
-                    self.move_state = 'WANDER'
 
-        self.move_timer -= dt
-        if self.move_timer <= 0:
-            if self.move_state == 'ADJUST' and not force_wander:
-                self.move_state = 'WANDER'
-                self.move_timer = random.uniform(0.3, 0.8)
-                self.wander_vec = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
-                if self.wander_vec.length() > 0: self.wander_vec = self.wander_vec.normalize()
-            else:
-                self.move_state = 'ADJUST' if not force_wander else 'WANDER'
-                self.move_timer = random.uniform(0.5, 1.0)
-                if force_wander:
-                     self.wander_vec = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
-                     if self.wander_vec.length() > 0: self.wander_vec = self.wander_vec.normalize()
-        
+        # Portal Check
+        flee_portal_vec = None
+        my_center = pygame.Vector2(self.rect.center)
+        for p in portals:
+             # Using center to center. 50px buffer from portal edge (approx 64 radius)
+             if my_center.distance_to(p.rect.center) < 150:
+                  diff = my_center - pygame.Vector2(p.rect.center)
+                  if diff.length() > 0: flee_portal_vec = diff.normalize()
+                  break
+
         vel = pygame.Vector2(0, 0)
         
-        if not force_wander:
-            dist_vec = pygame.Vector2(player_rect.center) - self.pos
-            dist = dist_vec.length()
-
-            if self.move_state == 'ADJUST':
-                if dist > 0:
-                    if dist < 250: vel = -dist_vec.normalize() * 150
-                    elif dist > 450: vel = dist_vec.normalize() * 120
-            elif self.move_state == 'WANDER':
-                vel = self.wander_vec * 100
-            
-            self.shoot_cd -= dt
-            if self.shoot_cd <= 0 and dist < settings.SQUID_SHOOT_DIST:
-                self.shoot_cd = 2.0
-                projectiles_list.append(Projectile(self.rect.centerx - 24, self.rect.centery - 24, pygame.Vector2(player_rect.center)))
+        if flee_portal_vec:
+            vel = flee_portal_vec * 150
+            # Reset state to wander to resume naturally after fleeing
+            self.move_state = 'WANDER' 
         else:
-            # Random movement only
-            vel = self.wander_vec * 100
+             # Initial Force Wander Check
+             force_wander = not player_visible
+             
+             self.move_timer -= dt
+             if self.move_timer <= 0:
+                if self.move_state == 'ADJUST' and not force_wander:
+                    self.move_state = 'WANDER'
+                    self.move_timer = random.uniform(0.3, 0.8)
+                    self.wander_vec = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
+                    if self.wander_vec.length() > 0: self.wander_vec = self.wander_vec.normalize()
+                else:
+                    self.move_state = 'ADJUST' if not force_wander else 'WANDER'
+                    self.move_timer = random.uniform(0.5, 1.0)
+                    if force_wander:
+                         self.wander_vec = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
+                         if self.wander_vec.length() > 0: self.wander_vec = self.wander_vec.normalize()
+
+             if not force_wander:
+                dist_vec = pygame.Vector2(player_rect.center) - self.pos
+                dist = dist_vec.length()
+
+                if self.move_state == 'ADJUST':
+                    if dist > 0:
+                        if dist < 250: vel = -dist_vec.normalize() * 150
+                        elif dist > 450: vel = dist_vec.normalize() * 120
+                elif self.move_state == 'WANDER':
+                    vel = self.wander_vec * 100
+                
+                self.shoot_cd -= dt
+                if self.shoot_cd <= 0 and dist < settings.SQUID_SHOOT_DIST:
+                    self.shoot_cd = 2.0
+                    projectiles_list.append(Projectile(self.rect.centerx - 24, self.rect.centery - 24, pygame.Vector2(player_rect.center)))
+             else:
+                # Random movement only
+                vel = self.wander_vec * 100
             
         self.pos += (vel + sep * 50) * dt
         self.rect.topleft = self.pos

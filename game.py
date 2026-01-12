@@ -22,6 +22,7 @@ class Game:
         self.font, self.cheat_buf = pygame.font.Font(settings.FONT_NAME, 36), ""
         self.shop_menu = None
         self.last_weapon = None
+        self.death_timer = 0
 
     def start(self):
         self.map, self.pizzas_made = Map(), 0
@@ -38,6 +39,7 @@ class Game:
         self.pizza_goal, self.round_p = settings.INITIAL_PIZZA_GOAL, 0
 
     def handle(self):
+        if self.state == 'DYING': return
         for e in pygame.event.get():
             if e.type == pygame.QUIT: self.running = False
             if e.type == pygame.KEYDOWN and self.state == 'GAME_OVER' and e.key == pygame.K_SPACE:
@@ -51,6 +53,8 @@ class Game:
                     self.cheat_buf = ""
                 if "SKIP" in self.cheat_buf: self.wave_timer, self.cheat_buf = 0, ""
                 if "OVER" in self.cheat_buf: self.state, self.cheat_buf = 'GAME_OVER', ""
+                if "KILL" in self.cheat_buf: self.player.health, self.cheat_buf = 0, ""
+                if "HEAL" in self.cheat_buf: self.player.health, self.cheat_buf = self.player.max_health, ""
             if self.state == 'MENU':
                 res = self.menu.handle_events(e)
                 if res == "START": self.start()
@@ -69,13 +73,23 @@ class Game:
     def update(self, dt):
         if self.state == 'MENU': self.menu.update(dt)
         elif self.state == 'GAME_OVER': pass
+        elif self.state == 'DYING':
+            self.death_timer += dt
+            self.camera.update(self.player.rect, dt) # keep cam aimed
+            if self.death_timer > settings.DEATH_ANIMATION_DURATION:
+                 self.player.add_tomb(self.world.dim)
+                 self.player.respawn(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2)
+                 self.world.dim = 1
+                 self.wave_timer -= settings.DEATH_PENALTY_TIME
+                 self.pizzas_made //= settings.DEATH_PIZZA_PENALTY_DIVISOR
+                 self.state = 'PLAYING'
         elif self.state == 'PLAYING':
             if not self.recipe_menu.is_open: self.player.handle_input(dt)
             if self.player.health <= 0:
-                self.player.respawn(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2)
-                self.world.dim = 1
-                self.wave_timer -= 30
-                self.pizzas_made //= 2
+                self.state = 'DYING'
+                self.death_timer = 0
+                return # Skip rest of update
+            
             if self.world.update(self.player, dt): self.f_a = 255
             
             if self.player.needs_shake:
@@ -127,16 +141,22 @@ class Game:
             self.screen.blit(t3, (w//2 - t3.get_width()//2, h//2 + 100))
         else:
             self.world.draw(self.screen, self.camera.offset_x, self.camera.offset_y)
-            self.player.draw(self.screen, self.camera.offset_x, self.camera.offset_y)
+            if self.state == 'DYING':
+                self.player.draw_death(self.screen, self.camera.offset_x, self.camera.offset_y, self.death_timer, self.world.dim)
+                self.ui.draw_penalty_anim(self.screen, self.death_timer, self.wave_num, max(0, self.wave_timer))
+            else:
+                self.player.draw(self.screen, self.camera.offset_x, self.camera.offset_y, self.world.dim)
             if self.f_a > 0: self.f_s.set_alpha(int(self.f_a)); self.screen.blit(self.f_s, (0, 0))
             score_txt = self.font.render(f"SCORE : {self.score}", True, (255,255,255))
             self.screen.blit(score_txt, (settings.SCREEN_WIDTH//2 - score_txt.get_width()//2, 20))
-            self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal)
+            
+            if self.state != 'DYING':
+                self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal)
+            
             if self.state != 'SHOP': self.recipe_menu.draw(self.screen, self.player.inventory, self.om)
             if self.world.dim == 1: self.ui.draw_arrow(self.screen, self.player.rect, self.world.oven.rect)
             if self.state == 'SHOP': self.shop_menu.draw(self.screen, self)
         pygame.display.flip()
-
     def run(self):
         while self.running:
             dt = self.clock.tick(settings.FPS) / 1000.0
