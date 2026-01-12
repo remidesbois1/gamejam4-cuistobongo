@@ -1,9 +1,10 @@
 import pygame, math, random, settings
 
 class Projectile:
-    def __init__(self, x, y, target_pos):
+    def __init__(self, x, y, target_pos, dim=0):
         self.rect = pygame.Rect(x, y, settings.PROJECTILE_SIZE, settings.PROJECTILE_SIZE)
         self.pos = pygame.Vector2(x, y)
+        self.dim = dim
         direction = target_pos - self.pos
         if direction.length() > 0: 
             self.vel = direction.normalize() * settings.PROJECTILE_SPEED
@@ -28,7 +29,7 @@ class Projectile:
         else: pygame.draw.circle(surf, (255, 0, 255), (self.rect.centerx - ox, self.rect.centery - oy), settings.PROJECTILE_SIZE//2)
 
 class Squid:
-    def __init__(self, x, y):
+    def __init__(self, x, y, dim=0):
         self.rect = pygame.Rect(x, y, settings.SQUID_SIZE, settings.SQUID_SIZE)
         self.pos = pygame.Vector2(x, y)
         self.shoot_cd = random.uniform(0, 2)
@@ -37,6 +38,7 @@ class Squid:
         self.move_state, self.move_timer = 'WANDER', 0
         self.wander_vec = pygame.Vector2(0, 0)
         self.hp, self.max_hp, self.hit_timer = settings.SQUID_HP, settings.SQUID_HP, 0
+        self.dim = dim
     
     def take_damage(self, amount):
         if self.hit_timer > 0: return False
@@ -104,7 +106,7 @@ class Squid:
                 self.shoot_cd -= dt
                 if self.shoot_cd <= 0 and dist < settings.SQUID_SHOOT_DIST:
                     self.shoot_cd = 2.0
-                    projectiles_list.append(Projectile(self.rect.centerx - 24, self.rect.centery - 24, pygame.Vector2(player_rect.center)))
+                    projectiles_list.append(Projectile(self.rect.centerx - 24, self.rect.centery - 24, pygame.Vector2(player_rect.center), dim=self.dim))
              else:
                 # Random movement only
                 vel = self.wander_vec * 100

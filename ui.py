@@ -10,7 +10,7 @@ class UI:
         
         self.bg_panel = pygame.image.load("assets/ui_panel.png").convert_alpha()
 
-    def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None, round_p=0, p_goal=1):
+    def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None, round_p=0, p_goal=1, malus=None):
         time_str = f"{int(wave_timer//60):02d}:{int(wave_timer%60):02d}"
         main_text = f"VAGUE {wave_num}   -   {time_str}"
         
@@ -35,6 +35,28 @@ class UI:
         clr = (50, 255, 50) if round_p >= p_goal else (255, 255, 255)
         txt = self.count_f.render(f"{round_p}/{p_goal}", True, clr)
         surface.blit(txt, (prect.x + 65, prect.y + 23))
+
+        if malus:
+            # Malus Panel (Top Right, below inventory items logic if any, but let's put it top right specifically)
+            # Actually inventory is at top right. Let's move inventory panel down or put malus below it.
+            # Inventory is at settings.SCREEN_WIDTH - 240, 20
+            
+            # Put malus to the left of inventory or below.
+            # Let's put it below for now.
+            mw, mh = 220, 60
+            m_rect = pygame.Rect(settings.SCREEN_WIDTH - 240, 100, mw, mh)
+            
+            if self.bg_panel:
+                surface.blit(pygame.transform.scale(self.bg_panel, m_rect.size), m_rect)
+            
+            # Title
+            t_name = self.font.render(malus.name, True, (255, 100, 100))
+            surface.blit(t_name, (m_rect.centerx - t_name.get_width()//2, m_rect.y + 10))
+            
+            # Desc
+            # Simple word wap or just small text
+            t_desc = pygame.font.Font("assets/Handpixies.ttf", 16).render(malus.description, True, (200, 200, 200))
+            surface.blit(t_desc, (m_rect.centerx - t_desc.get_width()//2, m_rect.y + 35))
 
         rect = pygame.Rect(settings.SCREEN_WIDTH - 240, 20, 220, 70)
         if self.bg_panel:

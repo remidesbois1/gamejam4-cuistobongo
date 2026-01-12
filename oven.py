@@ -1,4 +1,4 @@
-import pygame
+import pygame, settings
 
 class PizzaOven:
     def __init__(self, x, y):
@@ -16,6 +16,16 @@ class PizzaOven:
 
     def draw(self, surface, ox, oy):
         pos = (self.rect.x - ox, self.rect.y - oy)
+        
+        # Draw Safe Zone (Sky Blue, Semi-Transparent)
+        # Using a separate surface for alpha
+        r = settings.OVEN_SAFE_ZONE_RADIUS
+        s_zone = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+        pygame.draw.circle(s_zone, (135, 206, 235, 60), (r, r), r) # Sky Blue with alpha 60
+        # Draw border
+        pygame.draw.circle(s_zone, (135, 206, 235, 150), (r, r), r, 2)
+        surface.blit(s_zone, (self.rect.centerx - ox - r, self.rect.centery - oy - r))
+
         if self.active:
             s = pygame.Surface((self.w + 20, self.h + 20), pygame.SRCALPHA)
             pygame.draw.rect(s, (255, 215, 0, 60), s.get_rect(), border_radius=15)

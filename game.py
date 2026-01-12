@@ -8,6 +8,7 @@ from ui import UI
 from recipe_menu import RecipeMenu
 from order_manager import OrderManager
 from shop_menu import ShopMenu
+from malus_manager import MalusManager
 
 class Game:
     def __init__(self):
@@ -21,6 +22,7 @@ class Game:
         self.f_s.fill((0, 0, 0))
         self.font, self.cheat_buf = pygame.font.Font(settings.FONT_NAME, 36), ""
         self.shop_menu = None
+        self.malus_manager = None
         self.last_weapon = None
         self.death_timer = 0
 
@@ -33,10 +35,12 @@ class Game:
         self.last_weapon = self.player.weapon
         
         self.world = WorldManager(self.map)
+        self.malus_manager = MalusManager(self.world)
         self.camera = Camera(settings.MAP_WIDTH, settings.MAP_HEIGHT)
         self.ui, self.recipe_menu, self.shop_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font)
         self.score, self.f_a, self.wave_timer, self.wave_num, self.state = 0, 0, settings.WAVE_DURATION, 1, 'PLAYING'
         self.pizza_goal, self.round_p = settings.INITIAL_PIZZA_GOAL, 0
+        self.malus_manager.new_round()
 
     def handle(self):
         if self.state == 'DYING': return
@@ -128,6 +132,9 @@ class Game:
                 self.world.spawn()
                 self.world.enemy_manager.projectiles.clear()
                 self.world.res_manager.drops.clear()
+                
+                # Apply Malus
+                self.malus_manager.new_round()
 
     def draw(self):
         if self.state == 'MENU': self.menu.draw()
@@ -152,7 +159,7 @@ class Game:
             self.screen.blit(score_txt, (settings.SCREEN_WIDTH//2 - score_txt.get_width()//2, 20))
             
             if self.state != 'DYING':
-                self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal)
+                self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal, self.malus_manager.current_malus)
             
             if self.state != 'SHOP': self.recipe_menu.draw(self.screen, self.player.inventory, self.om)
             if self.world.dim == 1: self.ui.draw_arrow(self.screen, self.player.rect, self.world.oven.rect)

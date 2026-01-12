@@ -1,4 +1,4 @@
-import pygame, random, math
+import pygame, random, math, settings
 from enemy import Squid, TomatoEnemy
 from item import Drop
 
@@ -29,16 +29,25 @@ class EnemyManager:
                     self.enemies.append(TomatoEnemy(ex, ey))
                     break
 
-    def update(self, dt, player, dim, portals=[]):
+    def update(self, dt, player, dim, portals=[], oven_pos=None):
         for en in self.enemies:
-            target = 1 if isinstance(en, TomatoEnemy) else 0
+            target_dim = getattr(en, 'dim', 1 if isinstance(en, TomatoEnemy) else 0)
+            
+            if oven_pos and target_dim == 1:
+                 dist_to_oven = en.pos.distance_to(oven_pos)
+                 safe_radius = settings.OVEN_SAFE_ZONE_RADIUS + 15
+                 if dist_to_oven < safe_radius:
+                     push_vec = (en.pos - oven_pos).normalize() * 500
+                     en.pos += push_vec * dt
+                     en.rect.center = en.pos
+                     en.rect.topleft = en.pos
 
             if isinstance(en, Squid):
-                en.update(dt, player.rect, self.projectiles, self.enemies, player_visible=(dim==0), portals=portals)
-                if dim == target and en.rect.colliderect(player.rect):
+                en.update(dt, player.rect, self.projectiles, self.enemies, player_visible=(dim==target_dim), portals=portals)
+                if dim == target_dim and en.rect.colliderect(player.rect):
                     player.take_damage(5)
 
-            elif dim == target:
+            elif dim == target_dim:
                 en.update(dt, player.rect, self.projectiles, self.enemies)
                 if en.rect.colliderect(player.rect):
                     player.take_damage(5)
@@ -47,23 +56,29 @@ class EnemyManager:
             if proj.update(dt):
                 self.projectiles.remove(proj)
                 continue
-            if dim == 0 and proj.rect.colliderect(player.rect):
-                player.take_damage(10)
-                try: self.projectiles.remove(proj)
-                except: pass
+                
+            if oven_pos:
+                 target_dim = getattr(proj, 'dim', 0)
+                 if target_dim == 1:
+                     if proj.pos.distance_to(oven_pos) < settings.OVEN_SAFE_ZONE_RADIUS + 20:
+                         try: self.projectiles.remove(proj)
+                         except: pass
+                         continue
 
-        for d in self.drops[:]:
-            if d.type == "tomato":
-                if dim == 1 and player.rect.colliderect(d.rect):
-                    if player.inventory.add_item(d.type): self.drops.remove(d)
+            target_dim = getattr(proj, 'dim', 0)
+            if target_dim == dim and proj.rect.colliderect(player.rect):
+                 player.take_damage(10)
+                 try: self.projectiles.remove(proj)
+                 except: pass
 
     def draw(self, surf, ox, oy, dim):
         for en in self.enemies:
-            target = 1 if isinstance(en, TomatoEnemy) else 0
-            if dim == target: en.draw(surf, ox, oy)
+            target_dim = getattr(en, 'dim', 1 if isinstance(en, TomatoEnemy) else 0)
+            if dim == target_dim: en.draw(surf, ox, oy)
             
-        if dim == 0:
-            for proj in self.projectiles: proj.draw(surf, ox, oy)
+        for proj in self.projectiles:
+            target_dim = getattr(proj, 'dim', 0)
+            if dim == target_dim: proj.draw(surf, ox, oy)
             
         for d in self.drops:
             if d.type == "tomato" and dim == 1: d.draw(surf, ox, oy)
@@ -71,8 +86,8 @@ class EnemyManager:
     def check_hit(self, pos, damage, dim, radius=200):
         px, py = pos
         for en in self.enemies[:]:
-            target = 1 if isinstance(en, TomatoEnemy) else 0
-            if dim != target: continue
+            target_dim = getattr(en, 'dim', 1 if isinstance(en, TomatoEnemy) else 0)
+            if dim != target_dim: continue
             
             if math.hypot(px - en.rect.centerx, py - en.rect.centery) < radius:
                 if en.take_damage(damage):
