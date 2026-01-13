@@ -22,6 +22,7 @@ class WorldManager:
         self.spawn()
         
         self.in_p, self.effs, self.cd, self.cd_limit, self.damage = False, [], 0, 0.4, 1
+        self.cd_limit_multiplier = 1.0
         self.sounds, self.pan_sounds = [], []
         try:
             pygame.mixer.init()
@@ -62,8 +63,10 @@ class WorldManager:
     def trigger_weapon(self, p):
         if self.cd > 0: return False
         
+        limit = self.cd_limit * self.cd_limit_multiplier
+        
         if p.weapon == "drum_weapon":
-            self.effs.append(Shockwave(p)); self.cd = self.cd_limit
+            self.effs.append(Shockwave(p)); self.cd = limit
             if self.sounds: random.choice(self.sounds).play()
             
             self.res_manager.check_hit(p.rect.center, self.damage, self.dim)
@@ -71,13 +74,13 @@ class WorldManager:
             return True
             
         elif p.weapon == "pan_weapon":
-            self.cd = max(0.2, self.cd_limit * 2.5)
+            self.cd = max(0.2, limit * 2.5)
             p.start_dash(p.last_dir)
             if self.pan_sounds: random.choice(self.pan_sounds).play()
             return True
 
         elif p.weapon == "sax_weapon":
-            self.cd = max(0.2, self.cd_limit * 2.5)
+            self.cd = max(0.2, limit * 2.5)
             self.effs.append(ExplodingNote(p.rect.centerx, p.rect.centery, p.last_dir))
             if self.sax_sounds: random.choice(self.sax_sounds).play() 
             return True

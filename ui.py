@@ -9,6 +9,7 @@ class UI:
         for k, p in m.items(): self.icons[k] = pygame.transform.scale(pygame.image.load(p).convert_alpha(), (40, 40))
         
         self.bg_panel = pygame.image.load("assets/ui_panel.png").convert_alpha()
+        self.game_ptr = None
 
     def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None, round_p=0, p_goal=1, malus=None):
         time_str = f"{int(wave_timer//60):02d}:{int(wave_timer%60):02d}"
@@ -27,7 +28,7 @@ class UI:
         surface.blit(txt, (settings.SCREEN_WIDTH//2 - tw//2, b_rect.centery - th//2))
         
         # Hurry Up Text
-        if wave_timer <= settings.MUSIC_SPEEDUP_TIME:
+        if wave_timer <= settings.MUSIC_SPEEDUP_TIME and self.game_ptr and self.game_ptr.state == 'PLAYING':
              h_txt = self.large_font.render("Dépêchez-vous !!", True, (255, 50, 50))
              angle = math.sin(pygame.time.get_ticks() * 0.01) * 5
              rot_txt = pygame.transform.rotate(h_txt, angle)

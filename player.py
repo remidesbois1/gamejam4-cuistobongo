@@ -127,6 +127,8 @@ class Player:
         self.last_dir = pygame.Vector2(1, 0)
         self.dash_timer = 0
 
+        self.speed_multiplier = 1.0
+
     def start_dash(self, direction):
         if direction.length() == 0: direction = pygame.Vector2(1, 0)
         self.dash_vec = direction.normalize()
@@ -147,7 +149,7 @@ class Player:
         v = pygame.Vector2((k[pygame.K_RIGHT]|k[pygame.K_d])-(k[pygame.K_LEFT]|k[pygame.K_q]), (k[pygame.K_DOWN]|k[pygame.K_s])-(k[pygame.K_UP]|k[pygame.K_z]))
         if v.length() > 0:
             self.last_dir = v.normalize()
-            self.pos += self.last_dir * self.vel * dt
+            self.pos += self.last_dir * self.vel * self.speed_multiplier * dt
             self.pos.x = max(0, min(self.pos.x, self.map.width - 80))
             self.pos.y = max(0, min(self.pos.y, self.map.height - 80))
             self.rect.topleft = self.pos

@@ -53,9 +53,15 @@ class Game:
             self.music_upside = None
             self.music_normal_fast = None
             self.music_upside_fast = None
+
+        try:
+            self.music_drug = pygame.mixer.Sound("assets/super_power.mp3")
+        except:
+            self.music_drug = None
             
         self.mus_chan_n = None
         self.mus_chan_u = None
+        self.mus_chan_drug = None
         self.is_fast = False
         self.music_start_time = 0
 
@@ -74,70 +80,76 @@ class Game:
         self.bonus_manager = BonusManager(self.world)
         self.camera = Camera(settings.MAP_WIDTH, settings.MAP_HEIGHT)
         self.ui, self.recipe_menu, self.shop_menu, self.roulette_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font), RouletteMenu(self.font)
+        self.ui.game_ptr = self
         self.score, self.f_a, self.wave_timer, self.wave_num, self.state = 0, 0, settings.WAVE_DURATION, 1, 'PLAYING'
         self.pizza_goal, self.round_p = settings.INITIAL_PIZZA_GOAL, 0
         self.extra_enemies = 0
         
-        # Start Music (Normal Speed)
         self.is_fast = False
         if self.music_normal and self.music_upside:
-            if self.mus_chan_n: self.mus_chan_n.stop()
-            if self.mus_chan_u: self.mus_chan_u.stop()
-            
-            self.mus_chan_n = self.music_normal.play(loops=-1)
-            self.mus_chan_u = self.music_upside.play(loops=-1)
-            self.music_start_time = pygame.time.get_ticks()
-            if self.mus_chan_u: self.mus_chan_u.set_volume(0)
+            self.start_music()
 
-        # Start game with NO MALUS
         self.malus_manager.new_round(malus="NO_MALUS")
     
     def get_slice(self, sound, pct):
         try:
             arr = pygame.sndarray.array(sound)
             idx = int(pct * len(arr))
-            # Ensure idx is within bounds and aligned for stereo if needed (pygame handles shape)
             if idx >= len(arr): idx = 0
             return pygame.sndarray.make_sound(arr[idx:])
         except: return None
+
+    def stop_music(self):
+        if self.mus_chan_n:
+            self.mus_chan_n.stop()
+            self.mus_chan_n = None
+        if self.mus_chan_u:
+            self.mus_chan_u.stop()
+            self.mus_chan_u = None
+        if self.mus_chan_drug:
+            self.mus_chan_drug.stop()
+            self.mus_chan_drug = None
+
+    def reset_bonus_effects(self):
+        if self.bonus_manager: self.bonus_manager.pill_effect_timer = 0
+        if self.player: self.player.speed_multiplier = 1.0
+        if self.world: self.world.cd_limit_multiplier = 1.0
+
+    def start_music(self):
+        self.stop_music()
+        self.is_fast = False
+        if self.music_normal and self.music_upside:
+            self.mus_chan_n = self.music_normal.play(loops=-1)
+            self.mus_chan_u = self.music_upside.play(loops=-1)
+            self.music_start_time = pygame.time.get_ticks()
+            
+            vol_n = settings.MUSIC_VOLUME if self.world and self.world.dim == 1 else 0.0
+            vol_u = settings.MUSIC_VOLUME if self.world and self.world.dim == 0 else 0.0
+            
+            if self.mus_chan_n: self.mus_chan_n.set_volume(vol_n)
+            if self.mus_chan_u: self.mus_chan_u.set_volume(vol_u)
 
     def switch_music_speed(self, fast):
         self.is_fast = fast
         vol_n = self.mus_chan_n.get_volume() if self.mus_chan_n else settings.MUSIC_VOLUME
         vol_u = self.mus_chan_u.get_volume() if self.mus_chan_u else 0.0
         
-        # Calculate current position percentage
         pct = 0.0
         if self.mus_chan_n and self.music_normal:
-             # get_pos returns ms since play start. Assuming loops=-1, it increases indefinitely?
-             # actually get_pos returns time since START of playback, wrapping depends on impl.
-             # but usually for infinite loop it just counts up. 
-             # safeset is modulus length.
              pos_ms = pygame.time.get_ticks() - self.music_start_time
              if pos_ms < 0: pos_ms = 0
-             
-             # Current track length in ms
-             curr_track = self.music_normal_fast if (not fast and self.is_fast) else (self.music_normal if not self.is_fast else self.music_normal_fast)
-             # Wait, self.is_fast is already set to new value.
-             # previous state was not fast.
-             
-             # If we were slow: length is normal length.
-             # If we were fast: length is fast length.
              
              prev_fast = not fast
              base_len = self.music_normal_fast.get_length() if prev_fast else self.music_normal.get_length()
              if base_len > 0:
                  pct = (pos_ms / 1000.0) % base_len / base_len
-
         
-        if self.mus_chan_n: self.mus_chan_n.stop()
-        if self.mus_chan_u: self.mus_chan_u.stop()
+        self.stop_music()
         
         target_n = self.music_normal_fast if fast else self.music_normal
         target_u = self.music_upside_fast if fast else self.music_upside
         
         if target_n and target_u:
-            # Create slices starting from pct
             slice_n = self.get_slice(target_n, pct)
             slice_u = self.get_slice(target_u, pct)
             
@@ -145,21 +157,17 @@ class Game:
                 self.mus_chan_n = slice_n.play()
                 self.mus_chan_u = slice_u.play()
                 
-                # Queue the full loop
                 self.mus_chan_n.queue(target_n)
                 self.mus_chan_u.queue(target_u)
                 
-                # Flag to maintain loop in update
                 self.current_n_loop = target_n
                 self.current_u_loop = target_u
                 
-                # Update start time for next sync
                 new_len = target_n.get_length()
                 if new_len > 0:
                      new_pos_ms = pct * new_len * 1000.0
                      self.music_start_time = pygame.time.get_ticks() - new_pos_ms
             else:
-                # Fallback
                 self.mus_chan_n = target_n.play(loops=-1)
                 self.mus_chan_u = target_u.play(loops=-1)
                 self.current_n_loop = None
@@ -188,7 +196,10 @@ class Game:
                     self.cheat_buf = ""
                 if "SKIP" in self.cheat_buf: 
                     self.round_p, self.wave_timer, self.cheat_buf = self.pizza_goal, 0, ""
+                    self.reset_bonus_effects()
                     pygame.mixer.stop()
+                    self.stop_music()
+                    self.is_fast = True
                 if "OVER" in self.cheat_buf: 
                     self.state, self.cheat_buf = 'GAME_OVER', ""
                     pygame.mixer.stop()
@@ -210,17 +221,13 @@ class Game:
             elif self.state == 'SHOP': self.shop_menu.handle_input(e, self)
 
     def update(self, dt):
-        # Music Sync
         if self.state not in ['MENU', 'GAME_OVER'] and self.world and self.mus_chan_n and self.mus_chan_u:
-            # Check loop queue maintenance
             if hasattr(self, 'current_n_loop') and self.current_n_loop:
                 if not self.mus_chan_n.get_queue():
-                     # Only queue if channel is busy (playing)
                      if self.mus_chan_n.get_busy(): self.mus_chan_n.queue(self.current_n_loop)
                 if not self.mus_chan_u.get_queue():
                      if self.mus_chan_u.get_busy(): self.mus_chan_u.queue(self.current_u_loop)
 
-            # dim 1 = normal, dim 0 = alien
             target_n = settings.MUSIC_VOLUME if self.world.dim == 1 else 0.0
             target_u = settings.MUSIC_VOLUME if self.world.dim == 0 else 0.0
             self.mus_chan_n.set_volume(target_n)
@@ -230,7 +237,7 @@ class Game:
         elif self.state == 'GAME_OVER': pass
         elif self.state == 'DYING':
             self.death_timer += dt
-            self.camera.update(self.player.rect, dt) # keep cam aimed
+            self.camera.update(self.player.rect, dt)
             if self.death_timer > settings.DEATH_ANIMATION_DURATION:
                  self.player.add_tomb(self.world.dim)
                  self.player.respawn(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2)
@@ -239,19 +246,40 @@ class Game:
                  self.pizzas_made //= settings.DEATH_PIZZA_PENALTY_DIVISOR
                  self.state = 'PLAYING'
         elif self.state == 'PLAYING':
-            # Speed check
-            if self.wave_timer > 0:
-                if self.wave_timer <= settings.MUSIC_SPEEDUP_TIME and not self.is_fast:
-                    self.switch_music_speed(True)
-                elif self.wave_timer > settings.MUSIC_SPEEDUP_TIME and self.is_fast:
-                    self.switch_music_speed(False)
+            # Drug Effect Logic
+            if self.bonus_manager.pill_effect_timer > 0:
+                self.player.speed_multiplier = settings.PILL_SPEED_MULTI
+                self.world.cd_limit_multiplier = 1.0 / settings.PILL_ATTACK_SPEED_MULTI
+                
+                # Start Drug Music if not playing
+                if not self.mus_chan_drug and self.music_drug:
+                    if self.mus_chan_n: self.mus_chan_n.pause()
+                    if self.mus_chan_u: self.mus_chan_u.pause()
+                    self.mus_chan_drug = self.music_drug.play(loops=-1)
+            else:
+                self.player.speed_multiplier = 1.0
+                self.world.cd_limit_multiplier = 1.0
+                
+                # Stop Drug Music if playing
+                if self.mus_chan_drug:
+                    self.mus_chan_drug.stop()
+                    self.mus_chan_drug = None
+                    if self.mus_chan_n: self.mus_chan_n.unpause()
+                    if self.mus_chan_u: self.mus_chan_u.unpause()
+
+                # Normal Speed Switch Logic
+                if self.wave_timer > 0:
+                    if self.wave_timer <= settings.MUSIC_SPEEDUP_TIME and not self.is_fast:
+                        self.switch_music_speed(True)
+                    elif self.wave_timer > settings.MUSIC_SPEEDUP_TIME and self.is_fast:
+                        self.switch_music_speed(False)
 
             if not self.recipe_menu.is_open: self.player.handle_input(dt)
             if self.player.health <= 0:
                 self.player.on_death()
                 self.state = 'DYING'
                 self.death_timer = 0
-                return # Skip rest of update
+                return
             
             if self.world.update(self.player, dt): self.f_a = 255
             
@@ -272,12 +300,14 @@ class Game:
                     self.om.reset_orders(); self.shop_menu.refresh_active()
                     
                     # Reset music to slow/stop
-                    if self.mus_chan_n: self.mus_chan_n.stop()
-                    if self.mus_chan_u: self.mus_chan_u.stop()
+                    self.reset_bonus_effects()
+                    self.stop_music()
                     
                 else:
                     self.state = 'GAME_OVER'
+                    self.reset_bonus_effects()
                     pygame.mixer.stop()
+                    self.stop_music()
 
         elif self.state == 'SHOP':
             if self.wave_timer <= 0:
@@ -341,7 +371,7 @@ class Game:
                  self.bonus_manager.new_round(self.roulette_menu.selected_bonus)
                  
                  # Restart music slow
-                 self.switch_music_speed(False)
+                 self.start_music()
 
 
     def draw(self):
@@ -362,7 +392,7 @@ class Game:
                 self.ui.draw_penalty_anim(self.screen, self.death_timer, self.wave_num, max(0, self.wave_timer))
             else:
                 self.player.draw(self.screen, self.camera.offset_x, self.camera.offset_y, self.world.dim)
-                self.bonus_manager.draw(self.screen, self.camera.offset_x, self.camera.offset_y)
+                self.bonus_manager.draw(self.screen, self.camera.offset_x, self.camera.offset_y, self.player)
             if self.f_a > 0: self.f_s.set_alpha(int(self.f_a)); self.screen.blit(self.f_s, (0, 0))
             score_txt = self.font.render(f"SCORE : {self.score}", True, (255,255,255))
             self.screen.blit(score_txt, (settings.SCREEN_WIDTH//2 - score_txt.get_width()//2, 20))
