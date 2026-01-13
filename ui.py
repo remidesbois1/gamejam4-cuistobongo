@@ -25,6 +25,13 @@ class UI:
         # Text
         txt = self.large_font.render(main_text, True, settings.CLR_TEXT_CREAM)
         surface.blit(txt, (settings.SCREEN_WIDTH//2 - tw//2, b_rect.centery - th//2))
+        
+        # Hurry Up Text
+        if wave_timer <= settings.MUSIC_SPEEDUP_TIME:
+             h_txt = self.large_font.render("Dépêchez-vous !!", True, (255, 50, 50))
+             angle = math.sin(pygame.time.get_ticks() * 0.01) * 5
+             rot_txt = pygame.transform.rotate(h_txt, angle)
+             surface.blit(rot_txt, (settings.SCREEN_WIDTH//2 - rot_txt.get_width()//2, b_rect.bottom + 10))
 
         prect = pygame.Rect(20, 20, 150, 70)
         if self.bg_panel:
@@ -217,10 +224,29 @@ class RouletteSlot:
             surf.blit(icon, (center_x - 64, center_y - 64))
         
         # Name
+        # Name
         color = (0, 0, 0) if self.state == 'SHOWING' else (100, 100, 100)
         name = getattr(item, 'name', '')
-        nm = self.font.render(name, True, color)
-        surf.blit(nm, (center_x - nm.get_width()//2, center_y + 80))
+        
+        words = name.split(' ')
+        lines = []
+        cur_line = ""
+        max_width = 180
+        
+        for w in words:
+             test_line = cur_line + w + " "
+             if self.font.size(test_line)[0] < max_width:
+                 cur_line = test_line
+             else:
+                 lines.append(cur_line)
+                 cur_line = w + " "
+        lines.append(cur_line)
+        
+        y_off = center_y + 80
+        for l in lines:
+            nm = self.font.render(l, True, color)
+            surf.blit(nm, (center_x - nm.get_width()//2, y_off))
+            y_off += self.font.get_height()
         
         # Removed Desc from roulette slot as requested
 

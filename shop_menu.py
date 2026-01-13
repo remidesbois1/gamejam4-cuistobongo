@@ -39,14 +39,18 @@ class ShopMenu:
         self.active = random.sample(self.pool, 3)
 
     def handle_input(self, e, game):
+        can_buy = any(game.pizzas_made >= u.cost for u in self.active)
+        limit = 3 if can_buy else 4
+
         if e.type == pygame.KEYDOWN:
-            if e.key in [pygame.K_LEFT, pygame.K_q]: self.idx = (self.idx - 1) % 4
-            elif e.key in [pygame.K_RIGHT, pygame.K_d]: self.idx = (self.idx + 1) % 4
-            elif e.key in [pygame.K_DOWN, pygame.K_s]: self.idx = 3
+            if e.key in [pygame.K_LEFT, pygame.K_q]: self.idx = (self.idx - 1) % limit
+            elif e.key in [pygame.K_RIGHT, pygame.K_d]: self.idx = (self.idx + 1) % limit
+            elif e.key in [pygame.K_DOWN, pygame.K_s]: 
+                if not can_buy: self.idx = 3
             elif e.key in [pygame.K_UP, pygame.K_z] and self.idx == 3: self.idx = 1
             elif e.key == pygame.K_e or e.key == pygame.K_SPACE:
                 if self.idx == 3:
-                    game.wave_timer = 0
+                    if not can_buy: game.wave_timer = 0
                 else:
                     up = self.active[self.idx]
                     if game.pizzas_made >= up.cost:
@@ -98,17 +102,28 @@ class ShopMenu:
                 buy_t = self.small_f.render(settings.TEXT_SHOP_BUY, True, settings.CLR_TEXT_GOLD)
                 surf.blit(buy_t, (card_r.centerx - buy_t.get_width()//2, card_r.bottom + 20))
         
+        can_buy = any(game.pizzas_made >= u.cost for u in self.active)
         quit_rect = pygame.Rect(rect.centerx - 100, rect.bottom - 70, 200, 60)
         is_sel = (self.idx == 3)
         
         if self.btn_bg:
-            surf.blit(self.btn_bg, quit_rect)
-            if is_sel: surf.blit(self.btn_bg, quit_rect, special_flags=pygame.BLEND_ADD)
+            if can_buy:
+                # Disabled state (grayscale or dimmed)
+                disabled_bg = self.btn_bg.copy()
+                disabled_bg.fill((100, 100, 100), special_flags=pygame.BLEND_MULT)
+                surf.blit(disabled_bg, quit_rect)
+            else:
+                surf.blit(self.btn_bg, quit_rect)
+                if is_sel: surf.blit(self.btn_bg, quit_rect, special_flags=pygame.BLEND_ADD)
         else:
-            pygame.draw.rect(surf, settings.CLR_BTN_RED if not is_sel else settings.CLR_BTN_RED_HOVER, quit_rect, border_radius=10)
+            col = (100, 100, 100) if can_buy else settings.CLR_BTN_RED
+            if not can_buy and is_sel: col = settings.CLR_BTN_RED_HOVER
+            pygame.draw.rect(surf, col, quit_rect, border_radius=10)
         
-        if is_sel:
+        if is_sel and not can_buy:
              v = 2 + abs(int(math.sin(self.timer*2)*4))
              pygame.draw.rect(surf, (255, 215, 0), quit_rect.inflate(v, v), 3, border_radius=10)
-        q_txt = self.small_f.render(settings.TEXT_SKIP_BTN, True, settings.CLR_TEXT_MAIN)
+        
+        q_txt_col = (150, 150, 150) if can_buy else settings.CLR_TEXT_MAIN
+        q_txt = self.small_f.render(settings.TEXT_SKIP_BTN, True, q_txt_col)
         surf.blit(q_txt, (quit_rect.centerx - q_txt.get_width()//2, quit_rect.centery - q_txt.get_height()//2))

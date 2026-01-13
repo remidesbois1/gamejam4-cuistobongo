@@ -8,13 +8,13 @@ class EnemyManager:
         self.projectiles = []
         self.drops = []
 
-    def spawn(self, safe_func, w, h):
+    def spawn(self, safe_func, w, h, extra=0):
         self.enemies.clear()
         self.projectiles.clear()
         self.drops.clear()
         
         # Squids
-        for _ in range(15):
+        for _ in range(15 + extra):
             for _ in range(50):
                 ex, ey = random.uniform(300, w - 300), random.uniform(300, h - 300)
                 if safe_func(ex, ey, 100):
@@ -22,7 +22,7 @@ class EnemyManager:
                     break
         
         # Tomatoes
-        for _ in range(28):
+        for _ in range(28 + extra):
             for _ in range(50):
                 ex, ey = random.uniform(300, w - 300), random.uniform(300, h - 300)
                 if safe_func(ex, ey, 80):

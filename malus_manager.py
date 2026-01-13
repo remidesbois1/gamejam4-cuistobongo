@@ -23,7 +23,7 @@ class MalusManager:
             Malus("Calamars Gourmands", "Yamete !", self.malus_giant_squids, "assets/malus_giant.png"),
             Malus("Tomates Perdues", "Les récoltes dans l'Upside Down !", self.malus_alien_tomatoes, "assets/malus_tomato.png"),
             Malus("Objets Trouillards", "Je pue ou quoi ?", self.malus_fleeing_items, "assets/malus_run.png"),
-            Malus("Portails Pompettes", "Ils n'auraient pas dû absorber cette bouteille de Jack !", self.malus_moving_portals, "assets/malus_portal.png")
+            Malus("Portails Pompettes", "Ils n'auraient pas dû absorber ces bouteilles de Jack !", self.malus_moving_portals, "assets/malus_portal.png")
         ]
     
     def new_round(self, malus=None):

@@ -52,6 +52,8 @@ class Menu:
         self.line_h = 35
         self.total_h = len(self.story_lines) * self.line_h
         self.max_scroll = max(0, self.total_h - self.view_rect.height)
+        
+        self.mute_rect = pygame.Rect(settings.SCREEN_WIDTH - 160, settings.SCREEN_HEIGHT - 60, 140, 40)
 
     def wrap_text(self, text, font, inner_width):
         lines = []
@@ -97,6 +99,8 @@ class Menu:
             elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
                 for i, opt in enumerate(self.options):
                     if opt["rect"].collidepoint(e.pos): return self.trigger(opt["action"])
+                if hasattr(self, 'mute_rect') and self.mute_rect.collidepoint(e.pos):
+                    settings.MUSIC_VOLUME = 0.5 if settings.MUSIC_VOLUME == 0 else 0
         return None
 
     def trigger(self, action):
@@ -173,3 +177,17 @@ class Menu:
                     cursor = self.font.render(">", True, (255, 215, 0))
                     off = math.sin(pygame.time.get_ticks() * 0.01) * 5
                     self.screen.blit(cursor, (opt["rect"].x - 40 + off, opt["rect"].y))
+
+            # Mute Button
+            if hasattr(self, 'mute_rect'):
+                 mx, my = pygame.mouse.get_pos()
+                 hov = self.mute_rect.collidepoint((mx, my))
+                 bg_col = (100, 50, 50) if hov else (50, 30, 30)
+                 if settings.MUSIC_VOLUME == 0: bg_col = (50, 50, 50) # Muted style
+                 
+                 pygame.draw.rect(self.screen, bg_col, self.mute_rect, border_radius=10)
+                 pygame.draw.rect(self.screen, (200, 200, 200), self.mute_rect, 2, border_radius=10)
+                 
+                 txt_str = "SON: OFF" if settings.MUSIC_VOLUME == 0 else "SON: ON"
+                 mt = self.story_font.render(txt_str, True, (255, 255, 255))
+                 self.screen.blit(mt, (self.mute_rect.centerx - mt.get_width()//2, self.mute_rect.centery - mt.get_height()//2))
