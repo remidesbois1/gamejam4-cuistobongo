@@ -65,7 +65,8 @@ class Game:
         self.is_fast = False
         self.music_start_time = 0
 
-    def start(self):
+    def start(self, sandbox=False):
+        self.sandbox = sandbox
         pygame.mixer.stop()
         self.map, self.pizzas_made = Map(), 0
         self.om = OrderManager()
@@ -207,7 +208,8 @@ class Game:
                 if "HEAL" in self.cheat_buf: self.player.health, self.cheat_buf = self.player.max_health, ""
             if self.state == 'MENU':
                 res = self.menu.handle_events(e)
-                if res == "START": self.start()
+                if res == "START": self.start(sandbox=False)
+                elif res == "SANDBOX": self.start(sandbox=True)
                 elif res == "QUIT": self.running = False
             elif self.state == 'PLAYING':
                 if self.recipe_menu.is_open:
@@ -219,6 +221,7 @@ class Game:
                     if self.world.oven.active: self.recipe_menu.toggle()
                     else: self.world.trigger_weapon(self.player)
             elif self.state == 'SHOP': self.shop_menu.handle_input(e, self)
+            elif self.state == 'ROULETTE': self.roulette_menu.handle_input(e)
 
     def update(self, dt):
         if self.state not in ['MENU', 'GAME_OVER'] and self.world and self.mus_chan_n and self.mus_chan_u:
@@ -294,13 +297,14 @@ class Game:
             self.bonus_manager.update(dt, self.player)
             if self.recipe_menu.is_open and not self.world.oven.active: self.recipe_menu.toggle()
             if self.wave_timer <= 0:
-                if self.round_p >= self.pizza_goal:
+                if self.round_p >= self.pizza_goal or self.sandbox:
                     self.state, self.wave_timer, self.recipe_menu.is_open = 'SHOP', settings.SHOP_DURATION, False
                     self.recipe_menu.target = self.recipe_menu.cpos
                     self.om.reset_orders(); self.shop_menu.refresh_active()
                     
                     # Reset music to slow/stop
                     self.reset_bonus_effects()
+                    pygame.mixer.stop()
                     self.stop_music()
                     
                 else:
@@ -335,7 +339,10 @@ class Game:
                 if not avail_m: avail_m = self.malus_manager.maluses
 
                 # Launch Roulette
-                self.roulette_menu.start(avail_m, avail_w, self.bonus_manager.bonuses)
+                if self.sandbox:
+                     self.roulette_menu.start_sandbox(self.malus_manager.maluses, w_opts, self.bonus_manager.bonuses)
+                else:
+                     self.roulette_menu.start(avail_m, avail_w, self.bonus_manager.bonuses)
 
         elif self.state == 'ROULETTE':
              if self.roulette_menu.update(dt):

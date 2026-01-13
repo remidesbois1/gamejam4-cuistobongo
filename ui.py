@@ -275,6 +275,19 @@ class RouletteMenu:
         self.weapon_slot = RouletteSlot(weapons, self.font, "Arme !", self.tick_sound)
         self.bonus_slot = RouletteSlot(bonuses, self.font, "Bonus !", self.tick_sound)
         self.show_timer = 0
+        self.is_sandbox = False
+
+    def start_sandbox(self, maluses, weapons, bonuses):
+        self.start(maluses, weapons, bonuses)
+        self.is_sandbox = True
+        self.sb_col = 1 # Start on middle (Weapon)
+        self.sb_confirmed = False
+        
+        # Force all slots to showing state
+        for s in [self.malus_slot, self.weapon_slot, self.bonus_slot]:
+            s.state = 'SHOWING'
+            s.current_idx = 0
+            if s.items: s.selected_item = s.items[0]
 
     @property
     def selected_malus(self):
@@ -291,6 +304,9 @@ class RouletteMenu:
     def update(self, dt):
         if not self.active: return
         
+        if self.is_sandbox:
+             return self.sb_confirmed
+
         m_done = self.malus_slot.update(dt)
         w_done = self.weapon_slot.update(dt)
         b_done = self.bonus_slot.update(dt)
@@ -301,6 +317,35 @@ class RouletteMenu:
                 self.active = False
                 return True
         return False
+
+    def handle_input(self, e):
+        if not self.active or not self.is_sandbox: return
+        
+        if e.type == pygame.KEYDOWN:
+            slots = [self.malus_slot, self.weapon_slot, self.bonus_slot]
+            
+            if e.key == pygame.K_LEFT:
+                self.sb_col = (self.sb_col - 1) % 3
+                if self.tick_sound: self.tick_sound.play()
+            
+            elif e.key == pygame.K_RIGHT:
+                self.sb_col = (self.sb_col + 1) % 3
+                if self.tick_sound: self.tick_sound.play()
+                
+            elif e.key == pygame.K_UP:
+                s = slots[self.sb_col]
+                s.current_idx = (s.current_idx - 1) % len(s.items)
+                if s.items: s.selected_item = s.items[s.current_idx]
+                if self.tick_sound: self.tick_sound.play()
+
+            elif e.key == pygame.K_DOWN:
+                s = slots[self.sb_col]
+                s.current_idx = (s.current_idx + 1) % len(s.items)
+                if s.items: s.selected_item = s.items[s.current_idx]
+                if self.tick_sound: self.tick_sound.play()
+                
+            elif e.key in [pygame.K_SPACE, pygame.K_RETURN, pygame.K_e]:
+                self.sb_confirmed = True
 
     def draw(self, surf):
         if not self.active: return
@@ -323,6 +368,34 @@ class RouletteMenu:
         surf.blit(t, (cx - t.get_width()//2, cy - 200))
         
         # Draw Slots (3 columns)
-        if self.malus_slot: self.malus_slot.draw(surf, cx - 250, cy)
-        if self.weapon_slot: self.weapon_slot.draw(surf, cx, cy)
-        if self.bonus_slot: self.bonus_slot.draw(surf, cx + 250, cy)
+        centers = [cx - 250, cx, cx + 250]
+        if self.malus_slot: self.malus_slot.draw(surf, centers[0], cy)
+        if self.weapon_slot: self.weapon_slot.draw(surf, centers[1], cy)
+        if self.bonus_slot: self.bonus_slot.draw(surf, centers[2], cy)
+
+        if self.is_sandbox:
+             # Draw selection cursor
+             sel_x = centers[self.sb_col]
+             sel_rect = pygame.Rect(0, 0, 160, 260)
+             sel_rect.center = (sel_x, cy + 20)
+             pygame.draw.rect(surf, (255, 215, 0), sel_rect, 4, border_radius=15)
+             
+             # Draw arrows
+             off = math.sin(pygame.time.get_ticks() * 0.01) * 5
+             # Up Arrow
+             pygame.draw.polygon(surf, (255, 215, 0), [
+                 (sel_x, sel_rect.top - 20 + off),
+                 (sel_x - 10, sel_rect.top - 5 + off),
+                 (sel_x + 10, sel_rect.top - 5 + off)
+             ])
+             # Down Arrow
+             pygame.draw.polygon(surf, (255, 215, 0), [
+                 (sel_x, sel_rect.bottom + 20 - off),
+                 (sel_x - 10, sel_rect.bottom + 5 - off),
+                 (sel_x + 10, sel_rect.bottom + 5 - off)
+             ])
+             
+             # Validation Text
+             vt = self.font.render("ESPACE POUR VALIDER", True, (255, 255, 255))
+             surf.blit(vt, (cx - vt.get_width()//2, cy + 200))
+

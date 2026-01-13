@@ -25,13 +25,14 @@ class Menu:
             {"label": "JOUER", "action": "START"},
             {"label": "HISTOIRE", "action": "STORY"},
             {"label": "TUTO", "action": "TUTO"},
+            {"label": "SANDBOX", "action": "SANDBOX"},
             {"label": "QUITTER", "action": "QUIT"}
         ]
         self.selection = 0
         self.in_story = False
         
         cx = settings.SCREEN_WIDTH // 2
-        sy = 450
+        sy = 400
         for i, opt in enumerate(self.options):
             txt = self.font.render(opt["label"], True, (255, 255, 255))
             opt["rect"] = txt.get_rect(center=(cx, sy + i * 70))
@@ -106,6 +107,7 @@ class Menu:
     def trigger(self, action):
         if action == "START": return "START"
         if action == "QUIT": return "QUIT"
+        if action == "SANDBOX": return "SANDBOX"
         if action == "STORY": self.in_story = True
         return None
 

@@ -115,7 +115,7 @@ class BonusManager:
         self.bonuses = [
             Bonus("Bombes de l'Abbaye", "Évacuez la gare de Reims !!", self.bonus_bombs, "assets/BOMB.png"),
             Bonus("Cinquième Sens", "Indique la direction des ingrédients !", self.bonus_compass, "assets/Boussole.png"),
-            Bonus("Remède", "C'est de la bonne !", self.bonus_pills, "assets/Drug.png")
+            Bonus("Here we go !", "Échange la vision contre la vitesse !", self.bonus_pills, "assets/Drug.png")
         ]
         
     def new_round(self, bonus=None):
@@ -146,7 +146,6 @@ class BonusManager:
             p.draw(surface, cam_x, cam_y, self.world.dim)
             
         if self.pill_effect_timer > 0:
-            # Drug effect
             overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
             hue = (pygame.time.get_ticks() * 0.1) % 360
             color = pygame.Color(0,0,0)
@@ -163,30 +162,27 @@ class BonusManager:
         p_center = player.rect.center
         
         if self.world.dim == 1:
-            # Nearest Tomato
             nearest, min_dist = None, 999999
             for e in self.world.enemy_manager.enemies:
                 if isinstance(e, TomatoEnemy) and e.dim == 1:
                     d = math.hypot(e.rect.centerx - p_center[0], e.rect.centery - p_center[1])
                     if d < min_dist: nearest, min_dist = e, d
-            if nearest: targets.append((nearest.rect.center, (255, 50, 50))) # Red
+            if nearest: targets.append((nearest.rect.center, (255, 50, 50)))
             
-        else: # Dim 0
-            # Nearest Cheese and Tree
+        else:
             n_cheese, d_cheese = None, 999999
             n_tree, d_tree = None, 999999
             
             for r in self.world.res_manager.res:
-                # Check exist in Dim 0
                 if r.exists_in_dim(0):
                      d = math.hypot(r.rect.centerx - p_center[0], r.rect.centery - p_center[1])
                      if r.drop_type == "cheese":
                          if d < d_cheese: n_cheese, d_cheese = r, d
-                     elif r.drop_type == "dough": # Tree matches dough
+                     elif r.drop_type == "dough":
                          if d < d_tree: n_tree, d_tree = r, d
                          
-            if n_cheese: targets.append((n_cheese.rect.center, (255, 255, 50))) # Yellow
-            if n_tree: targets.append((n_tree.rect.center, (180, 50, 255))) # Purple
+            if n_cheese: targets.append((n_cheese.rect.center, (255, 255, 50)))
+            if n_tree: targets.append((n_tree.rect.center, (180, 50, 255)))
 
         for t_pos, col in targets:
             self.draw_arrow(surface, p_center, t_pos, col)
@@ -194,7 +190,7 @@ class BonusManager:
     def draw_arrow(self, surface, p_pos, t_pos, color):
         dx, dy = t_pos[0] - p_pos[0], t_pos[1] - p_pos[1]
         dist = math.hypot(dx, dy)
-        if dist < 300: return # Don't draw if close
+        if dist < 300: return
         
         angle = math.atan2(dy, dx)
         cx, cy = settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2
@@ -248,11 +244,6 @@ class Pill:
         return False
         
     def draw(self, surface, cam_x, cam_y, dim):
-        # Always visible? Or dim specific?
-        # User didn't specify. Items usually are dim-specific in this game unless specified.
-        # Let's assume visible in both or active in both for accessibility.
-        # I'll just draw it.
-        # Shadow
         s = pygame.Surface((24, 10), pygame.SRCALPHA)
         pygame.draw.ellipse(s, (0, 0, 0, 80), (0, 0, 24, 10))
         surface.blit(s, (self.rect.centerx - 12 - cam_x, self.rect.bottom - 5 - cam_y))
