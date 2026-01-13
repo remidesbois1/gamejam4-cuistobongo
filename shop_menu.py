@@ -71,8 +71,6 @@ class ShopMenu:
             
         title = self.title_f.render(settings.TEXT_SHOP_TITLE, True, settings.CLR_TEXT_GOLD)
         surf.blit(title, (rect.centerx - title.get_width()//2, rect.y + 30))
-        t_txt = self.small_f.render(settings.TEXT_SHOP_RESUME.format(max(0, int(game.wave_timer))), True, settings.CLR_TEXT_MAIN)
-        surf.blit(t_txt, (rect.centerx - t_txt.get_width()//2, rect.y + 80))
         if "pizza" in self.icons:
             ic = pygame.transform.scale(self.icons["pizza"], (50, 50))
             surf.blit(ic, (rect.right - 140, rect.y + 30))

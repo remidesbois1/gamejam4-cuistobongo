@@ -23,6 +23,12 @@ class Resource(Item):
     def update(self, dt):
         self.hit_timer = max(0, self.hit_timer - dt)
 
+    def exists_in_dim(self, dim):
+        # If it has an alt image, it likely exists in both (e.g. Tree, Ore)
+        # If no alt image, it defaults to Dim 1 (Tomato)
+        if self.alt_image: return True
+        return dim == 1
+
     def take_damage(self, amount, dim):
         if self.alt_image:
             if dim == 1: return False

@@ -10,6 +10,7 @@ from recipe_menu import RecipeMenu
 from order_manager import OrderManager
 from shop_menu import ShopMenu
 from malus_manager import MalusManager
+from bonus_manager import BonusManager
 
 def make_fast_sound(sound):
     try:
@@ -70,6 +71,7 @@ class Game:
         
         self.world = WorldManager(self.map)
         self.malus_manager = MalusManager(self.world)
+        self.bonus_manager = BonusManager(self.world)
         self.camera = Camera(settings.MAP_WIDTH, settings.MAP_HEIGHT)
         self.ui, self.recipe_menu, self.shop_menu, self.roulette_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font), RouletteMenu(self.font)
         self.score, self.f_a, self.wave_timer, self.wave_num, self.state = 0, 0, settings.WAVE_DURATION, 1, 'PLAYING'
@@ -184,7 +186,9 @@ class Game:
                 if "INV" in self.cheat_buf: 
                     for k in self.player.inventory.counts: self.player.inventory.counts[k] = self.player.inventory.cap
                     self.cheat_buf = ""
-                if "SKIP" in self.cheat_buf: self.round_p, self.wave_timer, self.cheat_buf = self.pizza_goal, 0, ""
+                if "SKIP" in self.cheat_buf: 
+                    self.round_p, self.wave_timer, self.cheat_buf = self.pizza_goal, 0, ""
+                    pygame.mixer.stop()
                 if "OVER" in self.cheat_buf: 
                     self.state, self.cheat_buf = 'GAME_OVER', ""
                     pygame.mixer.stop()
@@ -259,6 +263,7 @@ class Game:
             self.camera.update(self.player.rect, dt)
             self.recipe_menu.update(dt)
             self.score += self.om.update(dt)
+            self.bonus_manager.update(dt, self.player)
             if self.recipe_menu.is_open and not self.world.oven.active: self.recipe_menu.toggle()
             if self.wave_timer <= 0:
                 if self.round_p >= self.pizza_goal:
@@ -275,7 +280,6 @@ class Game:
                     pygame.mixer.stop()
 
         elif self.state == 'SHOP':
-            self.wave_timer -= dt
             if self.wave_timer <= 0:
                 self.state = 'ROULETTE'
                 
@@ -300,8 +304,8 @@ class Game:
                 avail_m = [m for m in self.malus_manager.maluses if m != self.malus_manager.current_malus]
                 if not avail_m: avail_m = self.malus_manager.maluses
 
-                # Clone maluses for third roulette as placeholder
-                self.roulette_menu.start(avail_m, avail_w, self.malus_manager.maluses)
+                # Launch Roulette
+                self.roulette_menu.start(avail_m, avail_w, self.bonus_manager.bonuses)
 
         elif self.state == 'ROULETTE':
              if self.roulette_menu.update(dt):
@@ -333,6 +337,9 @@ class Game:
                  # Apply Malus
                  self.malus_manager.new_round(self.roulette_menu.selected_malus)
                  
+                 # Apply Bonus
+                 self.bonus_manager.new_round(self.roulette_menu.selected_bonus)
+                 
                  # Restart music slow
                  self.switch_music_speed(False)
 
@@ -355,6 +362,7 @@ class Game:
                 self.ui.draw_penalty_anim(self.screen, self.death_timer, self.wave_num, max(0, self.wave_timer))
             else:
                 self.player.draw(self.screen, self.camera.offset_x, self.camera.offset_y, self.world.dim)
+                self.bonus_manager.draw(self.screen, self.camera.offset_x, self.camera.offset_y)
             if self.f_a > 0: self.f_s.set_alpha(int(self.f_a)); self.screen.blit(self.f_s, (0, 0))
             score_txt = self.font.render(f"SCORE : {self.score}", True, (255,255,255))
             self.screen.blit(score_txt, (settings.SCREEN_WIDTH//2 - score_txt.get_width()//2, 20))
