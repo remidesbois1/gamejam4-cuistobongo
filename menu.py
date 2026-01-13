@@ -77,9 +77,9 @@ class Menu:
         
         if self.in_story:
             if e.type == pygame.KEYDOWN:
-                if e.key in [pygame.K_ESCAPE, pygame.K_BACKSPACE, pygame.K_e]: self.in_story = False
-                if e.key == pygame.K_UP: self.scroll_y -= 30
-                if e.key == pygame.K_DOWN: self.scroll_y += 30
+                if e.key in settings.KEYS_CANCEL: self.in_story = False
+                if e.key in settings.KEYS_UP: self.scroll_y -= 30
+                if e.key in settings.KEYS_DOWN: self.scroll_y += 30
             elif e.type == pygame.MOUSEWHEEL:
                 self.scroll_y -= e.y * 30
             elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
@@ -90,9 +90,9 @@ class Menu:
         else:
             self.manager.process_events(e)
             if e.type == pygame.KEYDOWN:
-                if e.key in [pygame.K_UP, pygame.K_z]: self.selection = (self.selection - 1) % len(self.options)
-                if e.key in [pygame.K_DOWN, pygame.K_s]: self.selection = (self.selection + 1) % len(self.options)
-                if e.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_e]:
+                if e.key in settings.KEYS_UP: self.selection = (self.selection - 1) % len(self.options)
+                if e.key in settings.KEYS_DOWN: self.selection = (self.selection + 1) % len(self.options)
+                if e.key in settings.KEYS_VALIDATE:
                     return self.trigger(self.options[self.selection]["action"])
             elif e.type == pygame.MOUSEMOTION:
                 for i, opt in enumerate(self.options):

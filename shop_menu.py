@@ -43,12 +43,12 @@ class ShopMenu:
         limit = 3 if can_buy else 4
 
         if e.type == pygame.KEYDOWN:
-            if e.key in [pygame.K_LEFT, pygame.K_q]: self.idx = (self.idx - 1) % limit
-            elif e.key in [pygame.K_RIGHT, pygame.K_d]: self.idx = (self.idx + 1) % limit
-            elif e.key in [pygame.K_DOWN, pygame.K_s]: 
+            if e.key in settings.KEYS_LEFT: self.idx = (self.idx - 1) % limit
+            elif e.key in settings.KEYS_RIGHT: self.idx = (self.idx + 1) % limit
+            elif e.key in settings.KEYS_DOWN: 
                 if not can_buy: self.idx = 3
-            elif e.key in [pygame.K_UP, pygame.K_z] and self.idx == 3: self.idx = 1
-            elif e.key == pygame.K_e or e.key == pygame.K_SPACE:
+            elif e.key in settings.KEYS_UP and self.idx == 3: self.idx = 1
+            elif e.key in settings.KEYS_VALIDATE:
                 if self.idx == 3:
                     if not can_buy: game.wave_timer = 0
                 else:

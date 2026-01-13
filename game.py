@@ -184,7 +184,7 @@ class Game:
             
             if self.state == 'DYING': continue
             
-            if e.type == pygame.KEYDOWN and self.state == 'GAME_OVER' and e.key == pygame.K_SPACE:
+            if e.type == pygame.KEYDOWN and self.state == 'GAME_OVER' and e.key in settings.KEYS_VALIDATE:
                 self.state = 'MENU'
                 pygame.mixer.stop()
                 continue
@@ -217,7 +217,7 @@ class Game:
                     if p and p > 0: 
                         self.score, self.pizzas_made = self.score + p, self.pizzas_made + 1
                         self.round_p += 1
-                elif e.type == pygame.KEYDOWN and (e.key == pygame.K_e or e.key == pygame.K_SPACE):
+                elif e.type == pygame.KEYDOWN and e.key in settings.KEYS_INTERACT:
                     if self.world.oven.active: self.recipe_menu.toggle()
                     else: self.world.trigger_weapon(self.player)
             elif self.state == 'SHOP': self.shop_menu.handle_input(e, self)
@@ -282,6 +282,11 @@ class Game:
                 self.player.on_death()
                 self.state = 'DYING'
                 self.death_timer = 0
+                if self.mus_chan_drug:
+                    self.mus_chan_drug.stop()
+                    self.mus_chan_drug = None
+                    if self.mus_chan_n: self.mus_chan_n.unpause()
+                    if self.mus_chan_u: self.mus_chan_u.unpause()
                 return
             
             if self.world.update(self.player, dt): self.f_a = 255
@@ -302,7 +307,6 @@ class Game:
                     self.recipe_menu.target = self.recipe_menu.cpos
                     self.om.reset_orders(); self.shop_menu.refresh_active()
                     
-                    # Reset music to slow/stop
                     self.reset_bonus_effects()
                     pygame.mixer.stop()
                     self.stop_music()

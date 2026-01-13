@@ -114,6 +114,8 @@ class WorldManager:
         
         if self.dim == self.oven.dim:
             self.oven.update(p.rect)
+        else:
+            self.oven.active = False
         
         self.res_manager.update(dt, p, self.dim, items_flee=self.items_flee)
         self.enemy_manager.update(dt, p, self.dim, portals=self.portals, oven_pos=pygame.Vector2(self.oven.rect.center), oven_dim=self.oven.dim, items_flee=self.items_flee)

@@ -324,27 +324,27 @@ class RouletteMenu:
         if e.type == pygame.KEYDOWN:
             slots = [self.malus_slot, self.weapon_slot, self.bonus_slot]
             
-            if e.key == pygame.K_LEFT:
+            if e.key in settings.KEYS_LEFT:
                 self.sb_col = (self.sb_col - 1) % 3
                 if self.tick_sound: self.tick_sound.play()
             
-            elif e.key == pygame.K_RIGHT:
+            elif e.key in settings.KEYS_RIGHT:
                 self.sb_col = (self.sb_col + 1) % 3
                 if self.tick_sound: self.tick_sound.play()
                 
-            elif e.key == pygame.K_UP:
+            elif e.key in settings.KEYS_UP:
                 s = slots[self.sb_col]
                 s.current_idx = (s.current_idx - 1) % len(s.items)
                 if s.items: s.selected_item = s.items[s.current_idx]
                 if self.tick_sound: self.tick_sound.play()
 
-            elif e.key == pygame.K_DOWN:
+            elif e.key in settings.KEYS_DOWN:
                 s = slots[self.sb_col]
                 s.current_idx = (s.current_idx + 1) % len(s.items)
                 if s.items: s.selected_item = s.items[s.current_idx]
                 if self.tick_sound: self.tick_sound.play()
                 
-            elif e.key in [pygame.K_SPACE, pygame.K_RETURN, pygame.K_e]:
+            elif e.key in settings.KEYS_VALIDATE:
                 self.sb_confirmed = True
 
     def draw(self, surf):

@@ -146,7 +146,11 @@ class Player:
 
         self.inv_timer -= dt
         k = pygame.key.get_pressed()
-        v = pygame.Vector2((k[pygame.K_RIGHT]|k[pygame.K_d])-(k[pygame.K_LEFT]|k[pygame.K_q]), (k[pygame.K_DOWN]|k[pygame.K_s])-(k[pygame.K_UP]|k[pygame.K_z]))
+        right = any(k[key] for key in settings.KEYS_RIGHT)
+        left = any(k[key] for key in settings.KEYS_LEFT)
+        down = any(k[key] for key in settings.KEYS_DOWN)
+        up = any(k[key] for key in settings.KEYS_UP)
+        v = pygame.Vector2(int(right)-int(left), int(down)-int(up))
         if v.length() > 0:
             self.last_dir = v.normalize()
             self.pos += self.last_dir * self.vel * self.speed_multiplier * dt

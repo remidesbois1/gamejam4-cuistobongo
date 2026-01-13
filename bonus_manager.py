@@ -68,14 +68,15 @@ class Bomb:
         # Destroy Resources
         to_min = []
         for r in world.res_manager.res:
-             if r.exists_in_dim(world.dim):
-                 dx, dy = r.rect.centerx - ex_x, r.rect.centery - ex_y
-                 if math.hypot(dx, dy) < radius:
+             dx, dy = r.rect.centerx - ex_x, r.rect.centery - ex_y
+             if math.hypot(dx, dy) < radius:
+                 # Use take_damage to ensure we only dstroy valid resources in this dim
+                 if r.take_damage(100, world.dim):
                      to_min.append(r)
         
         for r in to_min:
             world.res_manager.drops.append(Drop(r.rect.x, r.rect.y, r.drop_type))
-            world.res_manager.res.remove(r)
+            if r in world.res_manager.res: world.res_manager.res.remove(r)
             
         # Sound
         try: 

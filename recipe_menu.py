@@ -102,9 +102,9 @@ class RecipeMenu:
     def update(self, dt): self.pos += (self.target - self.pos) * 0.12; self.timer += dt * 5
     def handle_input(self, e, p, om):
         if not self.is_open or e.type != pygame.KEYDOWN: return None
-        if e.key in [pygame.K_LEFT, pygame.K_q]: self.idx = (self.idx - 1) % 3
-        elif e.key in [pygame.K_RIGHT, pygame.K_d]: self.idx = (self.idx + 1) % 3
-        elif e.key == pygame.K_e or e.key == pygame.K_SPACE:
+        if e.key in settings.KEYS_LEFT: self.idx = (self.idx - 1) % 3
+        elif e.key in settings.KEYS_RIGHT: self.idx = (self.idx + 1) % 3
+        elif e.key in settings.KEYS_VALIDATE:
             if om.active_orders[self.idx] is None:
                 self.toggle()
                 return None

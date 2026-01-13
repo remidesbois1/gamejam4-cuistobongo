@@ -101,3 +101,12 @@ UPGRADE_DEFS = {
     "damage": {"name": "Force", "desc": "+1 Dégâts", "cost": 2, "val": 1},
     "time": {"name": "Patience", "desc": "+10% Temps", "cost": 2, "val": 0.1},
 }
+
+# Controls
+KEYS_UP = [pygame.K_UP, pygame.K_z]
+KEYS_DOWN = [pygame.K_DOWN, pygame.K_s]
+KEYS_LEFT = [pygame.K_LEFT, pygame.K_q]
+KEYS_RIGHT = [pygame.K_RIGHT, pygame.K_d]
+KEYS_VALIDATE = [pygame.K_RETURN, pygame.K_SPACE, pygame.K_e]
+KEYS_CANCEL = [pygame.K_ESCAPE, pygame.K_BACKSPACE, pygame.K_e]
+KEYS_INTERACT = [pygame.K_e, pygame.K_SPACE]
