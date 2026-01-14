@@ -6,6 +6,11 @@ class PizzaCard:
     @staticmethod
     def render(surf, o, rect, menu, inv, is_active):
         draw_rect = rect.copy()
+        
+        # Scale up selected card
+        if menu.is_open and is_active:
+            draw_rect = draw_rect.inflate(20, 20)
+
         if o and o.timer <= 10:
             off_x = math.sin(menu.timer * 50) * 3
             off_y = math.cos(menu.timer * 42) * 3
@@ -16,10 +21,6 @@ class PizzaCard:
             surf.blit(pygame.transform.scale(menu.bg_paper, draw_rect.size), draw_rect)
         else:
             pygame.draw.rect(surf, (40,45,60) if not o else ((60,65,85) if (menu.is_open and is_active) else (50,55,75)), draw_rect, border_radius=10)
-        
-        if menu.is_open and is_active:
-            v = 2 + abs(int(math.sin(menu.timer)*4))
-            pygame.draw.rect(surf, (0,200,255), draw_rect.inflate(v,v), 3, border_radius=10)
             
         if o and o.timer <= 25:
             intensity = (25 - o.timer) / 25.0

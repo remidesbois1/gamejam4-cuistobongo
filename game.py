@@ -1,4 +1,4 @@
-import pygame, sys, settings, random
+import pygame, sys, settings, random, math
 import numpy as np
 from map import Map
 from player import Player
@@ -39,6 +39,10 @@ class Game:
         self.last_weapon = None
         self.death_timer = 0
         self.roulette_menu = None
+        self.game_over_timer = 0
+        
+        try: self.death_screen_img = pygame.transform.scale(pygame.image.load("assets/death_screen.png").convert(), (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
+        except: self.death_screen_img = None
         
         # Music
         try:
@@ -224,8 +228,9 @@ class Game:
             if self.state == 'DYING': continue
             
             if e.type == pygame.KEYDOWN and self.state == 'GAME_OVER' and e.key in settings.KEYS_VALIDATE:
-                self.state = 'MENU'
-                pygame.mixer.stop()
+                if self.game_over_timer > 2.0:
+                    self.state = 'MENU'
+                    pygame.mixer.stop()
                 continue
                 
             if e.type == pygame.KEYDOWN:
@@ -242,6 +247,7 @@ class Game:
                     self.is_fast = True
                 if "OVER" in self.cheat_buf: 
                     self.state, self.cheat_buf = 'GAME_OVER', ""
+                    self.game_over_timer = 0
                     pygame.mixer.stop()
                 if "KILL" in self.cheat_buf: self.player.health, self.cheat_buf = 0, ""
                 if "HEAL" in self.cheat_buf: self.player.health, self.cheat_buf = self.player.max_health, ""
@@ -286,7 +292,7 @@ class Game:
             self.mus_chan_u.set_volume(target_u)
 
         if self.state == 'MENU': self.menu.update(dt)
-        elif self.state == 'GAME_OVER': pass
+        elif self.state == 'GAME_OVER': self.game_over_timer += dt
         elif self.state == 'DYING':
             self.death_timer += dt
             self.camera.update(self.player.rect, dt)
@@ -510,14 +516,49 @@ class Game:
     def draw(self):
         if self.state == 'MENU': self.menu.draw()
         elif self.state == 'GAME_OVER':
-            self.screen.fill((50, 0, 0))
-            t1 = self.font.render("GAME OVER", True, (255, 255, 255))
-            t2 = self.font.render(f"SCORE: {self.score}", True, (255, 215, 0))
-            t3 = self.font.render("PRESS SPACE TO RETURN TO MENU", True, (200, 200, 200))
+            if self.death_screen_img:
+                self.screen.blit(self.death_screen_img, (0, 0))
+            else:
+                self.screen.fill((50, 0, 0))
+            
             w, h = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
-            self.screen.blit(t1, (w//2 - t1.get_width()//2, h//2 - 100))
-            self.screen.blit(t2, (w//2 - t2.get_width()//2, h//2))
-            self.screen.blit(t3, (w//2 - t3.get_width()//2, h//2 + 100))
+            
+            # Left-align all GAME OVER content
+            center_x = w // 2 - 200 # Shift left
+            
+            # Game Over Title (Higher, Black Container)
+            t1 = self.menu.title_font.render("GAME OVER", True, (255, 50, 50))
+            title_rect = t1.get_rect(center=(center_x, h//2 - 200))
+            
+            # Title Background
+            bg_rect = title_rect.inflate(60, 20)
+            bs = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+            pygame.draw.rect(bs, (0, 0, 0, 200), (0, 0, bg_rect.w, bg_rect.h), border_radius=15)
+            self.screen.blit(bs, bg_rect.topleft)
+            self.screen.blit(t1, title_rect)
+            
+            # Stats centered on the new axis
+            # Score
+            t_score = self.menu.title_font.render(f"SCORE: {self.score}", True, (255, 215, 0))
+            self.screen.blit(t_score, (center_x - t_score.get_width()//2, h//2 - 80))
+
+            # Waves & Pizzas
+            stats_font = self.ui.large_font
+            t_wave = stats_font.render(f"Vagues Survecues: {self.wave_num - 1}", True, (200, 200, 255))
+            t_pizza = stats_font.render(f"Pizzas Fabriquees: {self.pizzas_made}", True, (255, 255, 255))
+            
+            self.screen.blit(t_wave, (center_x - t_wave.get_width()//2, h//2))
+            self.screen.blit(t_pizza, (center_x - t_pizza.get_width()//2, h//2 + 50))
+
+            # Press Space Center 
+            if self.game_over_timer > 2.0:
+                # Pulse alpha
+                alpha = int(127 + 127 * math.sin(pygame.time.get_ticks() * 0.005))
+                t2 = self.font.render(settings.TEXT_RETURN_MENU, True, (200, 200, 200))
+                s2 = pygame.Surface(t2.get_size(), pygame.SRCALPHA)
+                s2.blit(t2, (0,0))
+                s2.set_alpha(alpha)
+                self.screen.blit(s2, (center_x - t2.get_width()//2, h//2 + 150))
         else:
             self.world.draw(self.screen, self.camera.offset_x, self.camera.offset_y)
             if self.state == 'DYING':
@@ -527,11 +568,9 @@ class Game:
                 self.player.draw(self.screen, self.camera.offset_x, self.camera.offset_y, self.world.dim)
                 self.bonus_manager.draw(self.screen, self.camera.offset_x, self.camera.offset_y, self.player)
             if self.f_a > 0: self.f_s.set_alpha(int(self.f_a)); self.screen.blit(self.f_s, (0, 0))
-            score_txt = self.font.render(f"SCORE : {self.score}", True, (255,255,255))
-            self.screen.blit(score_txt, (settings.SCREEN_WIDTH//2 - score_txt.get_width()//2, 20))
             
             if self.state != 'DYING':
-                self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal, self.malus_manager.current_malus, is_tutorial=(self.state == 'TUTORIAL'))
+                self.ui.draw(self.screen, self.player.inventory, self.score, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal, self.malus_manager.current_malus, is_tutorial=(self.state == 'TUTORIAL'))
             
             if self.state != 'SHOP': self.recipe_menu.draw(self.screen, self.player.inventory, self.om)
             if self.world.dim == self.world.oven.dim: self.ui.draw_arrow(self.screen, self.player.rect, self.world.oven.rect)

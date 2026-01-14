@@ -11,7 +11,7 @@ class UI:
         self.bg_panel = pygame.image.load("assets/ui_panel.png").convert_alpha()
         self.game_ptr = None
 
-    def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None, round_p=0, p_goal=1, malus=None, is_tutorial=False):
+    def draw(self, surface, inv, score, wave_num, wave_timer, hp, max_hp, weapon=None, round_p=0, p_goal=1, malus=None, is_tutorial=False):
         if not is_tutorial:
             time_str = f"{int(wave_timer//60):02d}:{int(wave_timer%60):02d}"
             main_text = f"VAGUE {wave_num}   -   {time_str}"
@@ -35,15 +35,23 @@ class UI:
                  rot_txt = pygame.transform.rotate(h_txt, angle)
                  surface.blit(rot_txt, (settings.SCREEN_WIDTH//2 - rot_txt.get_width()//2, b_rect.bottom + 10))
 
+            # Goal (Top Left)
             prect = pygame.Rect(20, 20, 150, 70)
             if self.bg_panel:
                 surface.blit(pygame.transform.scale(self.bg_panel, prect.size), prect)
 
-            # Goal
             surface.blit(self.icons["pizza_stat"], (prect.x + 15, prect.y + 15))
             clr = (50, 255, 50) if round_p >= p_goal else (255, 255, 255)
             txt = self.count_f.render(f"{round_p}/{p_goal}", True, clr)
             surface.blit(txt, (prect.x + 65, prect.y + 23))
+
+            # Score (Bottom Right)
+            score_rect = pygame.Rect(settings.SCREEN_WIDTH - 200, settings.SCREEN_HEIGHT - 50, 180, 40)
+            # if self.bg_panel:
+            #     surface.blit(pygame.transform.scale(self.bg_panel, score_rect.size), score_rect)
+            
+            s_txt = self.font.render(f"SCORE: {score}", True, settings.CLR_TEXT_CREAM)
+            surface.blit(s_txt, (score_rect.right - s_txt.get_width() - 20, score_rect.centery - s_txt.get_height()//2))
 
         if malus:
             # Show only for first 20 seconds of the wave
@@ -87,20 +95,42 @@ class UI:
                     surface.blit(t_desc, (m_rect.centerx - t_desc.get_width()//2, dy))
                     dy += 18
 
-        rect = pygame.Rect(settings.SCREEN_WIDTH - 240, 20, 220, 70)
+        # Inventory Panel (Top Right) - Enlarged
+        rect = pygame.Rect(settings.SCREEN_WIDTH - 330, 20, 310, 95)
         if self.bg_panel:
             surface.blit(pygame.transform.scale(self.bg_panel, rect.size), rect)
 
         for i, t in enumerate(["cheese", "tomato", "dough"]):
-            x, y = rect.x + 20 + i*68, rect.y + 15
+            # Spacing calculation
+            # 3 items distributed in 310px width
+            step_x = 95
+            x, y = rect.x + 25 + i * step_x, rect.y + 18
+            
             if t in self.icons:
-                surface.blit(self.icons[t], (x, y))
-                clr = (255, 80, 80) if inv.is_full(t) else (255, 255, 255)
-                ts = self.font.render(str(inv.counts[t]), True, clr)
+                # Draw Icon (Larger: 52x52)
+                icon_scaled = pygame.transform.scale(self.icons[t], (52, 52))
+                surface.blit(icon_scaled, (x, y))
+                
+                # Check status
+                is_full = inv.is_full(t)
+                clr = (255, 100, 100) if is_full else (255, 255, 255)
+                
+                # Render Text: "Count/Cap"
+                txt_str = f"{inv.counts[t]}/{inv.cap}"
+                ts = self.count_f.render(txt_str, True, clr) # Use count_f (size 28)
+                
+                # Background for text to ensure readability
                 tw, th = ts.get_size()
-                bx, by, bw, bh = x + 40 - max(22, tw+6) + 5, y + 40 - th + 3, max(22, tw+6), th + 2
+                # Center text below icon or overlapping bottom-right? 
+                # Let's put it clearly below or to the side. 
+                # Since we have height 95, let's put it partly overlapping bottom-right
+                
+                bx, by = x + 30, y + 35
+                bw, bh = tw + 8, th + 4
+                
                 ns = pygame.Surface((bw, bh), pygame.SRCALPHA)
-                pygame.draw.rect(ns, (20, 25, 40, 160), (0,0,bw,bh), border_radius=5)
+                pygame.draw.rect(ns, (20, 25, 40, 180), (0,0,bw,bh), border_radius=6)
+                
                 surface.blit(ns, (bx, by))
                 surface.blit(ts, (bx + bw//2 - tw//2, by + bh//2 - th//2))
 
