@@ -113,6 +113,7 @@ class Player:
     
     def take_damage(self, amount):
         if self.inv_timer > 0 or self.dash_timer > 0: return False
+        if self.speed_multiplier > 1.1: amount /= 2
         self.health -= amount
         self.inv_timer = settings.PLAYER_INV_TIME
         self.needs_shake = True

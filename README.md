@@ -1,36 +1,41 @@
-# gj4
+# Cuisto Bongo
 
-Ceci est un squelette de dépôt pour votre jeu.
+Bienvenue dans Cuisto Bongo, un jeu d'action et de cuisine développé par la Team Bamboo pour la GameJam 4 de l'IUT de Reims.
 
-## Contenu
+## Description
 
-```
-├── README.md
-├── metadata.yaml
-├── run.sh
-├── artwork
-│   ├── cover.png
-│   ├── thumbnail.png
-│   └── video.mp4
-└── game
-    ├── ...
-    ├── ...
-    └── ...
-```
+Ancien cuistot du légendaire pirate Jackass-Parrow, Cuisto Bongo a vu son destin basculer le jour où son capitaine l'a accidentellement mutilé d'un coup de canon. Pour réparer son erreur, un ami proche du pirate lui greffa des prothèses mécaniques habitées par une entité.
+Si l'entité mécanique n'est pas constamment rassasiée, elle finira par prendre le contrôle de Bongo pour massacrer tout ce qui bouge. Exilé sur une terre lointaine envahie par une dimension parallèle, Bongo essaye désormais de survivre en cumulant ses deux passions, les pizzas et la musique. C'est donc armé de son bongo ainsi que de son saxophone et de sa flûte de pan qu'il décida de vivre le restant de ses jours, en faisant des allers-retours entre les portails dimensionnels et son fourneau afin de concocter une quantité suffisante pour nourrir la machine.
 
-- `README.md` : ce fichier (à modifier pour décrire votre projet)
-- `metadata.yaml` : fichier de description du jeu, de l'équipe, des membres de l'équipe etc. Merci de le compléter au fur et à mesure (commencez par les infos sur l'équipe svp, qu'on puisse afficher la liste très vite).
-- `run.sh` : script de lancement du jeu (si vous ne savez pas quoi mettre dedans, laissez-le vide).
-- `artwork` : ce dossier contient deux images et une vidéo qui nous permettront d'annoncer la présentation du jeu depuis [`EmulationStation`](https://es-de.org/).
-- `cover.png` : affiche de votre jeu, au format 1:1 (800x800).
-- `thumbnail.png` : miniature du jeu, au format 1:1 également (256x256).
-- `video.mp4` : courte vidéo de présentation du jeu (ça peut être un diaporama de screenshots, une vidéo de démo etc.)
-- `game` : c'est dans ce dossier que vous allez mettre/développer votre jeu.
+Le jeu mêle des mécaniques de "survivors-like" (combat contre des hordes, améliorations) et de gestion de cuisine (recettes, ingrédients, commandes) ainsi que certaines inspirations du jeu "Forager".
 
-# Important
+## Fonctionnalités
 
-N'oubliez pas d'ajouter M. Blanchard à votre dépôt (utilisateur `blanch01`).
+- **Double Dimension** : Voyagez entre le monde principal et la dimension parallèle via des portails pour trouver des ressources.
+- **Cuisine** : Récoltez de la pâte, du fromage et des tomates sur les ennemis ou dans la nature, et cuisinez-les au four.
+- **Combat** : Utilisez des instruments (Bongo, Saxophone, Flûte de Pan) pour vaincre les tomates et calamars et amasser un maximum de ressources.
+- **Vagues** : Survivez le plus longtemps possible. Entre chaque vague, le jeu devient plus difficile.
+- **Roulette de Malus/Bonus** : À la fin de chaque manche, recevez un malus et un bonus aléatoire.
+- **Boutique d'Améliorations** : Dépensez vos pizzas durement cuisinées pour améliorer votre vitesse, votre vie ou la capacité de votre inventaire.
+- **Scoreboard** : Enregistrez votre score et comparez-le.
 
-Votre `metadata.yaml` sera récupéré tous les soirs pour mettre à jour les fiches-équipes.
+## Contrôles
 
-Encore merci de votre participation !
+### En Jeu
+
+- **Déplacement** : Flèches directionnelles ou Z / Q / S / D
+- **Interaction / Attaquer** : Espace ou E
+- **Cuisiner (proche du four)** : Espace ou E pour ouvrir le menu des commandes
+- **Sélectionner une commande** : Flèches Gauche / Droite puis Espace ou E pour valider
+
+### Menus
+
+- **Navigation** : Flèches directionnelles ou Z / Q / S / D
+- **Valider** : Espace, Entrée ou E
+- **Retour / Annuler** : Échap
+
+## Crédits
+
+Développé par la Team Bamboo.
+
+Voir fichier "credits.txt" pour les crédits de musique et d'effets sonores.

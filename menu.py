@@ -1,4 +1,4 @@
-import pygame, pygame_gui, settings, math
+import pygame, pygame_gui, settings, math, json
 
 class Menu:
     def __init__(self, screen):
@@ -20,16 +20,17 @@ class Menu:
             self.story_font = pygame.font.SysFont("Arial", 32)
             self.title_font = pygame.font.SysFont("Arial", 80)
 
-        # Navigation
         self.options = [
             {"label": "JOUER", "action": "START"},
             {"label": "HISTOIRE", "action": "STORY"},
             {"label": "TUTO", "action": "TUTO"},
             {"label": "SANDBOX", "action": "SANDBOX"},
+            {"label": "SCOREBOARD", "action": "SCORES"},
             {"label": "QUITTER", "action": "QUIT"}
         ]
         self.selection = 0
         self.in_story = False
+        self.in_scores = False
         
         cx = settings.SCREEN_WIDTH // 2
         sy = 400
@@ -39,7 +40,7 @@ class Menu:
         unit_h = 75
         gap = 15
         
-        total_h = 3 * unit_h + 2 * gap
+        total_h = 4 * unit_h + 3 * gap
         start_y = (settings.SCREEN_HEIGHT - total_h) // 2 + settings.MENU_OFFSET_Y
 
         self.options[0]["rect"] = pygame.Rect(start_x, start_y, 2 * unit_w + gap, unit_h)
@@ -49,6 +50,9 @@ class Menu:
         
         self.options[3]["rect"] = pygame.Rect(start_x, start_y + 2*(unit_h + gap), unit_w, unit_h)
         self.options[4]["rect"] = pygame.Rect(start_x + unit_w + gap, start_y + 2*(unit_h + gap), unit_w, unit_h)
+        
+
+        self.options[5]["rect"] = pygame.Rect(start_x, start_y + 3*(unit_h + gap), 2 * unit_w + gap, unit_h)
 
         self.panel_rect = pygame.Rect(0, 0, 900, 500)
         self.panel_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2)
@@ -59,8 +63,8 @@ class Menu:
         self.back_rect = pygame.Rect(0, 0, 200, 50)
         self.back_rect.midbottom = (self.panel_rect.centerx, self.panel_rect.bottom - 30)
 
-        self.lore_raw = "Ancien cuisto du legendaire pirate Jackass-Parrow, Cuisto Bongo a vu son destin basculer le jour ou son capitaine l'a accidentellement mutile d'un coup de canon. Pour reparer son erreur, un ami proche du pirate lui greffa des protheses mecaniques habitees par une entite demoniaque.<br><br>Le pacte est terrible : si cette jambe mecanique n'est pas constamment rassasiee, l'entite prend le controle de Bongo pour massacrer tout ce qui bouge. Exile sur une terre de portails dimensionnels, Bongo n'a plus qu'un seul but : cuisiner des pizzas a l'infini pour endormir la bete qui sommeille en lui."
-        self.story_lines = self.wrap_text(self.lore_raw.replace("<br>", "\n"), self.story_font, self.view_rect.width - 20)
+        self.lore_raw = "Ancien cuistot du légendaire pirate Jackass-Parrow, Cuisto Bongo a vu son destin basculer le jour où son capitaine l'a accidentellement mutilé d'un coup de canon. Pour réparer son erreur, un ami proche du pirate lui greffa des prothèses mécaniques habitées par une entité. \nSi l'entité mécanique n'est pas constamment rassasiée, elle finira par prendre le contrôle de Bongo pour massacrer tout ce qui bouge. Exilé sur une terre lointaine envahie par une dimension parallèle, Bongo essaye désormais de survivre en cumulant ses deux passions, les pizzas et la musique. C'est donc armé de son bongo ainsi que de son saxophone et de sa flûte de pan qu'il décida de vivre le restant de ses jours, en faisant des allers-retours entre les portails dimensionnels et son fourneau afin de concocter une quantité suffisante pour nourrir la machine."
+        self.story_lines = self.wrap_text(self.lore_raw, self.story_font, self.view_rect.width - 20)
         
         self.scroll_y = 0
         self.line_h = 35
@@ -100,34 +104,44 @@ class Menu:
             
             self.scroll_y = max(0, min(self.scroll_y, self.max_scroll))
             
+        elif self.in_scores:
+            if e.type == pygame.KEYDOWN:
+                if e.key in settings.KEYS_CANCEL: self.in_scores = False
+            elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+                if self.back_rect.collidepoint(e.pos): self.in_scores = False
+            
         else:
             self.manager.process_events(e)
             if e.type == pygame.KEYDOWN:
                 if e.key in settings.KEYS_UP:
-                    if self.selection == 0: self.selection = 3
+                    if self.selection == 0: self.selection = 5
                     elif self.selection in [1, 2]: self.selection = 0
                     elif self.selection == 3: self.selection = 1
                     elif self.selection == 4: self.selection = 2
+                    elif self.selection == 5: self.selection = 3 # defaulting to left
                     
                 elif e.key in settings.KEYS_DOWN:
                     if self.selection == 0: self.selection = 1
                     elif self.selection == 1: self.selection = 3
                     elif self.selection == 2: self.selection = 4
-                    elif self.selection in [3, 4]: self.selection = 0
+                    elif self.selection in [3, 4]: self.selection = 5
+                    elif self.selection == 5: self.selection = 0
 
                 elif e.key in settings.KEYS_LEFT:
                     if self.selection == 2: self.selection = 1
                     elif self.selection == 4: self.selection = 3
-                    elif self.selection == 0: self.selection = 4
-                    elif self.selection == 1: self.selection = 2
-                    elif self.selection == 3: self.selection = 4
+                    elif self.selection == 0: self.selection = 2
+                    elif self.selection == 1: self.selection = 4
+                    elif self.selection == 3: self.selection = 4 # wrap
+                    elif self.selection == 5: self.selection = 4
 
                 elif e.key in settings.KEYS_RIGHT:
                     if self.selection == 1: self.selection = 2
                     elif self.selection == 3: self.selection = 4
-                    elif self.selection == 0: self.selection = 3
-                    elif self.selection == 2: self.selection = 1
-                    elif self.selection == 4: self.selection = 3
+                    elif self.selection == 0: self.selection = 1
+                    elif self.selection == 2: self.selection = 0
+                    elif self.selection == 4: self.selection = 3 # wrap
+                    elif self.selection == 5: self.selection = 3
                     
                 if e.key in settings.KEYS_VALIDATE:
                     return self.trigger(self.options[self.selection]["action"])
@@ -147,6 +161,7 @@ class Menu:
         if action == "SANDBOX": return "SANDBOX"
         if action == "TUTO": return "TUTO"
         if action == "STORY": self.in_story = True
+        if action == "SCORES": self.in_scores = True
         return None
 
     def update(self, dt): 
@@ -186,6 +201,60 @@ class Menu:
                 pygame.draw.rect(self.screen, (50, 50, 60), sb_rect, border_radius=3)
                 pygame.draw.rect(self.screen, (200, 180, 50), th_rect, border_radius=3)
 
+            mx, my = pygame.mouse.get_pos()
+            hov = self.back_rect.collidepoint((mx, my))
+            col = (255, 50, 50) if hov else (200, 200, 200)
+            
+            pygame.draw.rect(self.screen, (50, 10, 10) if hov else (30, 30, 30), self.back_rect, border_radius=10)
+            pygame.draw.rect(self.screen, col, self.back_rect, 2, border_radius=10)
+            
+            bt = self.font.render("RETOUR", True, col)
+            self.screen.blit(bt, (self.back_rect.centerx - bt.get_width()//2, self.back_rect.centery - bt.get_height()//2))
+
+        elif self.in_scores:
+            overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 200))
+            self.screen.blit(overlay, (0, 0))
+            
+            # Panel
+            pygame.draw.rect(self.screen, (30, 25, 40), self.panel_rect, border_radius=20)
+            pygame.draw.rect(self.screen, (255, 215, 0), self.panel_rect, 4, border_radius=20)
+            
+            # Title
+            t = self.font.render("TABLEAU DES SCORES", True, (255, 180, 50))
+            self.screen.blit(t, (self.panel_rect.centerx - t.get_width()//2, self.panel_rect.y + 20))
+            
+            # Load Scores
+            try:
+                with open("score.json", "r") as f: scores = json.load(f)
+                scores.sort(key=lambda x: x.get("score", 0), reverse=True)
+            except: scores = []
+            
+            # Headers
+            start_y = self.panel_rect.y + 90
+            col_x = [self.panel_rect.x + 80, self.panel_rect.x + 200, self.panel_rect.x + 550, self.panel_rect.x + 750]
+            
+            headers = ["Rg", "Pseudo", "Score", "Vagues"]
+            for i, h in enumerate(headers):
+                 ht = self.story_font.render(h, True, (200, 200, 255))
+                 self.screen.blit(ht, (col_x[i], start_y))
+                 
+            # Rows
+            row_y = start_y + 40
+            for i, s in enumerate(scores[:10]):
+                y = row_y + i * 32
+                col = (200, 255, 200) if i == 0 else ((255, 255, 220) if i < 3 else (200, 200, 200))
+                
+                # Rank
+                self.screen.blit(self.story_font.render(f"#{i+1}", True, col), (col_x[0], y))
+                # Name
+                self.screen.blit(self.story_font.render(s.get("name", "???")[:12], True, col), (col_x[1], y))
+                # Score
+                self.screen.blit(self.story_font.render(str(s.get("score", 0)), True, col), (col_x[2], y))
+                # Waves
+                self.screen.blit(self.story_font.render(str(s.get("wave", 0)), True, col), (col_x[3], y))
+            
+            # Back Button
             mx, my = pygame.mouse.get_pos()
             hov = self.back_rect.collidepoint((mx, my))
             col = (255, 50, 50) if hov else (200, 200, 200)
@@ -238,6 +307,10 @@ class Menu:
 
                 shad = self.font.render(label, True, (0, 0, 0))
                 txt = self.font.render(label, True, text_color)
+                
+                if label == "SCOREBOARD":
+                     shad = pygame.transform.scale_by(shad, 0.7)
+                     txt = pygame.transform.scale_by(txt, 0.7)
                 
                 txt_rect = txt.get_rect(center=rect.center)
                 shad_rect = shad.get_rect(center=(rect.centerx + 2, rect.centery + 2))
