@@ -34,6 +34,16 @@ Le jeu mêle des mécaniques de "survivors-like" (combat contre des hordes, amé
 - **Valider** : Espace, Entrée ou E
 - **Retour / Annuler** : Échap
 
+### Codes de triches
+
+Ecrivez au clavier l'un de ces codes à n'importe quel moment pour tricher. Si un code de triche est utilisé durant une partie, impossible d'enregistrer son score !
+
+- **PIZZA** : Ajoute 15 Pizzas.
+- **INV** : Remplis l'inventaire de tout les ingrédients au maximum.
+- **OVER** : Affiche l'écran de Game Over (Utile pour quitter le mode Sandbox/Tuto).
+- **KILL** : Provoque la mort du joueur (Mais pas la fin de la partie)
+- **HEAL** : Redonne toute sa vie au joueur.
+
 ## Crédits
 
 Développé par la Team Bamboo.
