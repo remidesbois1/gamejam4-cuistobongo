@@ -1,15 +1,20 @@
 import pygame, math, settings, random
 
 class Upgrade:
-    def __init__(self, key, name, desc, cost, val, icon):
-        self.key, self.name, self.desc, self.cost, self.val, self.icon = key, name, desc, cost, val, icon
+    def __init__(self, key, name, desc, cost, val, icon, scale=1):
+        self.key, self.name, self.desc, self.cost, self.val, self.icon, self.scale = key, name, desc, cost, val, icon, scale
 
     def apply(self, game):
         if self.key == "speed": game.player.vel += self.val
         elif self.key == "cap": game.player.inventory.cap += self.val
         elif self.key == "atk_speed": game.world.cd_limit = max(0.1, game.world.cd_limit - self.val)
-        elif self.key == "damage": game.world.damage += self.val
+        elif self.key == "health": 
+            game.player.max_health += self.val
+            game.player.health = min(game.player.health + self.val, game.player.max_health)
         elif self.key == "time": game.om.time_mult += self.val
+        
+        self.cost += self.scale
+        if self.cost > 10: self.cost = 10
 
 class ShopMenu:
     def __init__(self, font):
@@ -17,11 +22,12 @@ class ShopMenu:
         self.idx, self.timer = 0, 0
         self.pool = []
         for k, v in settings.UPGRADE_DEFS.items():
-            self.pool.append(Upgrade(k, v["name"], v["desc"], v["cost"], v["val"], k))
+            scale = 1
+            self.pool.append(Upgrade(k, v["name"], v["desc"], v["cost"], v["val"], k, scale))
         self.active, self.icons = [], {}
         
         m = {"speed": "assets/vitesse_upgrade.png", "cap": "assets/backpack.png", "atk_speed": "assets/attaque_speed_upgrade.png", 
-             "damage": "assets/force_upgrade.png", "time": "assets/time_upgrade.png", "pizza": "assets/pizza_marguerita.png"}
+             "health": "assets/force_upgrade.png", "time": "assets/time_upgrade.png", "pizza": "assets/pizza_marguerita.png"}
         for k, p in m.items(): 
             try: self.icons[k] = pygame.transform.scale(pygame.image.load(p).convert_alpha(), (80, 80))
             except: pass
@@ -50,14 +56,19 @@ class ShopMenu:
             elif e.key in settings.KEYS_UP and self.idx == 3: self.idx = 1
             elif e.key in settings.KEYS_VALIDATE:
                 if self.idx == 3:
-                    if not can_buy: game.wave_timer = 0
+                     # Button Pass
+                     if not can_buy: game.wave_timer = 0
                 else:
                     up = self.active[self.idx]
                     if game.pizzas_made >= up.cost:
                         game.pizzas_made -= up.cost
                         up.apply(game)
+                        
                         others = [u for u in self.pool if u not in self.active]
                         if others: self.active[self.idx] = random.choice(others)
+                        
+                        can_buy = any(game.pizzas_made >= u.cost for u in self.active)
+                        if not can_buy: self.idx = 3
 
     def draw(self, surf, game):
         self.timer += 0.05

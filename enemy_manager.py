@@ -13,7 +13,6 @@ class EnemyManager:
         self.projectiles.clear()
         self.drops.clear()
         
-        # Squids (Do not spawn in Tutorial Phase 1)
         if tutorial_stage != 1:
             for _ in range(15 + extra):
                 for _ in range(50):

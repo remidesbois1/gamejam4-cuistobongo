@@ -30,7 +30,7 @@ class MalusManager:
         self.world.oven.dim = 1
         self.world.items_flee = False
         
-        # Reset Portals
+        # reset portals
         w, h = self.world.map.width, self.world.map.height
         ps = [(w//2-800, h//2-600), (w//2+800, h//2-600), (w//2-800, h//2+600), (w//2+800, h//2+600)]
         for i, p in enumerate(self.world.portals): 
@@ -39,7 +39,7 @@ class MalusManager:
                  p.pos = pygame.Vector2(ps[i])
                  p.rect.topleft = p.pos
         
-        # Reset Tomatoes to dim 1
+        # reset tomatoes to dim 1
         for en in self.world.enemy_manager.enemies:
             if isinstance(en, TomatoEnemy): en.dim = 1
 

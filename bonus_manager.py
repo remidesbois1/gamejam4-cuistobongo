@@ -15,11 +15,11 @@ class Bomb:
              self.image.fill((50, 50, 50))
              pygame.draw.circle(self.image, (0, 0, 0), (24, 24), 24)
              
-        self.state = 'WAITING' # WAITING, ATTACHED
+        self.state = 'WAITING'
         self.timer = 0
         self.fuse_time = 4.0
         self.target_player = None
-        self.dim = 1 # Start with normal
+        self.dim = 1
 
     def update(self, dt, player, world):
         if self.state == 'WAITING':
@@ -44,7 +44,6 @@ class Bomb:
         ex_x, ex_y = self.rect.center
         radius = 300
         
-        # Explosion Visuals - Saxophone Style
         c = pygame.Color(0,0,0)
         c.hsva = (random.randint(0, 360), 100, 100, 100)
         col = (c.r, c.g, c.b)
@@ -52,7 +51,6 @@ class Bomb:
         for _ in range(50): 
             world.effs.append(NoteParticle(ex_x, ex_y, col))
         
-        # Destroy Enemies
         to_remove = []
         for e in world.enemy_manager.enemies:
             dx, dy = e.rect.centerx - ex_x, e.rect.centery - ex_y
@@ -65,12 +63,10 @@ class Bomb:
                 world.res_manager.drops.append(Drop(e.rect.x, e.rect.y, "tomato"))
             world.enemy_manager.enemies.remove(e)
             
-        # Destroy Resources
         to_min = []
         for r in world.res_manager.res:
              dx, dy = r.rect.centerx - ex_x, r.rect.centery - ex_y
              if math.hypot(dx, dy) < radius:
-                 # Use take_damage to ensure we only dstroy valid resources in this dim
                  if r.take_damage(100, world.dim):
                      to_min.append(r)
         
@@ -78,7 +74,6 @@ class Bomb:
             world.res_manager.drops.append(Drop(r.rect.x, r.rect.y, r.drop_type))
             if r in world.res_manager.res: world.res_manager.res.remove(r)
             
-        # Sound
         try: 
             s = pygame.mixer.Sound("assets/tir.wav")
             s.set_volume(0.4)

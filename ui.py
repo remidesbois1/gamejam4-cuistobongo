@@ -60,7 +60,7 @@ class UI:
             if elapsed < 20:
                 # Malus Panel (Top Right)
                 mw, mh = 220, 150 # Taller panel
-                m_rect = pygame.Rect(settings.SCREEN_WIDTH - 240, 100, mw, mh)
+                m_rect = pygame.Rect(settings.SCREEN_WIDTH - 240, 120, mw, mh)
                 
                 if self.bg_panel:
                     surface.blit(pygame.transform.scale(self.bg_panel, m_rect.size), m_rect)
@@ -189,7 +189,7 @@ class UI:
             cur_x = start_x + (end_x - start_x) * t
             
             self.large_font.set_bold(True)
-            pen_txt = self.large_font.render("-30s", True, (160, 0, 0))
+            pen_txt = self.large_font.render("-20s", True, (160, 0, 0))
             self.large_font.set_bold(False)
             surface.blit(pen_txt, (cur_x, b_rect.centery - pen_txt.get_height()//2))
 

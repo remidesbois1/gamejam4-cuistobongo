@@ -58,7 +58,6 @@ class ExplodingNote:
         try: 
             raw_img = pygame.image.load("assets/note_music.png").convert_alpha()
             self.img = pygame.transform.scale(raw_img, (48, 48))
-            # Tinting: Make white then multiply
             self.img.fill((255, 255, 255), special_flags=pygame.BLEND_RGB_ADD)
             self.img.fill((*self.color, 255), special_flags=pygame.BLEND_RGBA_MULT)
         except: self.img = None
@@ -92,7 +91,6 @@ class NoteParticle:
         try: 
             raw = pygame.image.load("assets/particule_note.png").convert_alpha()
             self.img = pygame.transform.scale(raw, (32, 32))
-            # Tinting
             self.img.fill((255, 255, 255), special_flags=pygame.BLEND_RGB_ADD)
             self.img.fill((*color, 255), special_flags=pygame.BLEND_RGBA_MULT)
         except: self.img = None

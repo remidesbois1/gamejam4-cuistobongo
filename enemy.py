@@ -55,7 +55,6 @@ class Squid:
     def update(self, dt, player_rect, projectiles_list, others, player_visible=True, portals=[]):
         self.hit_timer = max(0, self.hit_timer - dt)
         
-        # Separation logic
         sep = pygame.Vector2(0, 0)
         for o in others:
             if o is not self:
@@ -64,11 +63,9 @@ class Squid:
                     diff = self.pos - o.pos
                     if diff.length() > 0: sep += diff.normalize() * (200 / max(1, d))
 
-        # Portal Check
         flee_portal_vec = None
         my_center = pygame.Vector2(self.rect.center)
         for p in portals:
-             # Using center to center. 50px buffer from portal edge (approx 64 radius)
              if my_center.distance_to(p.rect.center) < 150:
                   diff = my_center - pygame.Vector2(p.rect.center)
                   if diff.length() > 0: flee_portal_vec = diff.normalize()
@@ -78,14 +75,12 @@ class Squid:
         
         if flee_portal_vec:
             vel = flee_portal_vec * 150
-            # Reset state to wander to resume naturally after fleeing
             self.move_state = 'WANDER' 
         else:
-             # Initial Force Wander Check
-             force_wander = not player_visible
+            force_wander = not player_visible
              
-             self.move_timer -= dt
-             if self.move_timer <= 0:
+            self.move_timer -= dt
+            if self.move_timer <= 0:
                 if self.move_state == 'ADJUST' and not force_wander:
                     self.move_state = 'WANDER'
                     self.move_timer = random.uniform(0.3, 0.8)
@@ -98,7 +93,7 @@ class Squid:
                          self.wander_vec = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
                          if self.wander_vec.length() > 0: self.wander_vec = self.wander_vec.normalize()
 
-             if not force_wander:
+            if not force_wander:
                 dist_vec = pygame.Vector2(player_rect.center) - self.pos
                 dist = dist_vec.length()
 
@@ -113,15 +108,13 @@ class Squid:
                 if self.shoot_cd <= 0 and dist < settings.SQUID_SHOOT_DIST:
                     self.shoot_cd = 2.0
                     projectiles_list.append(Projectile(self.rect.centerx - 24, self.rect.centery - 24, pygame.Vector2(player_rect.center), dim=self.dim, big=self.giant))
-             else:
-                # Random movement only
+            else:
                 vel = self.wander_vec * 100
             
         self.pos += (vel + sep * 50) * dt
         self.rect.topleft = self.pos
 
     def draw(self, surf, ox, oy):
-        # Shadow
         sz = self.rect.width
         sw, sh = int(sz * 0.7), int(sz // 3 * 0.7)
         s = pygame.Surface((sw, sh), pygame.SRCALPHA)
@@ -179,9 +172,9 @@ class TomatoEnemy:
         if self.state == 'IDLE':
             self.vel = pygame.Vector2(0, 0)
             if self.timer <= 0:
-                if dist < settings.TOMATO_ATTACK_DIST: # Trigger Attack
+                if dist < settings.TOMATO_ATTACK_DIST: 
                     self.state, self.timer = 'CHARGE_PREP', 1.0
-                else: # Wander Jump
+                else: 
                     self.state, self.timer = 'JUMP_PREP', 0.5
         
         elif self.state == 'JUMP_PREP':
@@ -248,7 +241,7 @@ class TomatoEnemy:
         elif self.state == 'JUMP':
             w, h = settings.TOMATO_SIZE - 10, settings.TOMATO_SIZE + 10
             img = pygame.transform.scale(img, (w, h))
-            dy = -10 # Jump up visual
+            dy = -10
         elif self.state == 'ROLLING':
             img = pygame.transform.rotate(img, self.angle)
             w, h = img.get_size()

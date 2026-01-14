@@ -66,7 +66,7 @@ PILL_DURATION_TIME = 15
 PILL_SPEED_MULTI = 1.5
 PILL_ATTACK_SPEED_MULTI = 2.0
 
-# UI Texts
+# Texts
 TEXT_WAVE = "VAGUE"
 TEXT_SCORE = "SCORE"
 TEXT_WAITING = "EN ATTENTE..."
@@ -91,7 +91,7 @@ TUTORIAL_TEXTS = {
         "Interagissez avec le four (E ou Espace) et cuisinez une Pizza Vide avant que le temps ne s'écoule."
     ],
     3: [
-        "Un monstre ! Utilisez le Saxophone (E/Espace) pour attaquer. Si vous tombez à court de PV, vous perdrez tout vos items, et vous serez envoyé 30 secondes dans le futur.",
+        "Un monstre ! Utilisez le Saxophone (E/Espace) pour attaquer. Si vous tombez à court de PV, vous perdrez tout vos items, et vous serez envoyé 20 secondes dans le futur.",
         "Tuez des tomates sauvages pour en récupérer et cuisinez une Pizza Tomate avant que le temps ne s'écoule."
     ],
     4: [
@@ -124,7 +124,7 @@ UPGRADE_DEFS = {
     "speed": {"name": "Vitesse", "desc": "+25 Vitesse", "cost": 2, "val": 25},
     "cap": {"name": "Sac à dos", "desc": "+1 Capacité", "cost": 2, "val": 1},
     "atk_speed": {"name": "Vitesse attaque", "desc": "-0.05s Recharge", "cost": 2, "val": 0.05},
-    "damage": {"name": "Force", "desc": "+1 Dégâts", "cost": 2, "val": 1},
+    "health": {"name": "Vie", "desc": "+5 PV Max", "cost": 2, "val": 5},
     "time": {"name": "Patience", "desc": "+10% Temps", "cost": 2, "val": 0.1},
 }
 

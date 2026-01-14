@@ -1,4 +1,4 @@
-import pygame, sys, settings, random, math
+import pygame, sys, settings, random, math, json
 import numpy as np
 from map import Map
 from player import Player
@@ -37,9 +37,14 @@ class Game:
         self.shop_menu = None
         self.malus_manager = None
         self.last_weapon = None
+        self.last_bonus = None
         self.death_timer = 0
         self.roulette_menu = None
         self.game_over_timer = 0
+        self.input_active = False
+        self.input_name = ""
+        self.input_focus = 0 # 0: Text, 1: Button
+        self.cheated = False
         
         try: self.death_screen_img = pygame.transform.scale(pygame.image.load("assets/death_screen.png").convert(), (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         except: self.death_screen_img = None
@@ -81,6 +86,8 @@ class Game:
         # Force weapon to Bomgo (drum) for first round
         self.player.weapon = "drum_weapon"
         self.last_weapon = self.player.weapon
+        self.last_bonus = None
+        self.cheated = False
         
         self.world = WorldManager(self.map)
         self.malus_manager = MalusManager(self.world)
@@ -106,6 +113,8 @@ class Game:
         
         self.player.weapon = "drum_weapon"
         self.last_weapon = "drum_weapon"
+        self.last_bonus = None
+        self.cheated = False
         
         self.world = WorldManager(self.map)
         self.world.spawn(tutorial_stage=1)
@@ -227,30 +236,68 @@ class Game:
             
             if self.state == 'DYING': continue
             
-            if e.type == pygame.KEYDOWN and self.state == 'GAME_OVER' and e.key in settings.KEYS_VALIDATE:
-                if self.game_over_timer > 2.0:
-                    self.state = 'MENU'
-                    pygame.mixer.stop()
+            if self.state == 'GAME_OVER':
+                if e.type == pygame.KEYDOWN:
+                    if not self.input_active:
+                         # Wait for initial press
+                         if self.game_over_timer > 2.0 and e.key in settings.KEYS_VALIDATE:
+                             if not self.cheated and not self.sandbox:
+                                 self.input_active = True
+                                 self.input_name = ""
+                                 self.input_focus = 0
+                             else:
+                                 self.state = 'MENU'
+                                 self.game_over_timer = 0
+                                 pygame.mixer.stop()
+                    else:
+                         # Input Dialog Logic
+                         if e.key in settings.KEYS_DOWN: self.input_focus = 1
+                         elif e.key in settings.KEYS_UP: self.input_focus = 0
+                         
+                         elif e.key in settings.KEYS_VALIDATE and self.input_focus == 1:
+                              # Validated
+                              try:
+                                  try: 
+                                      with open("score.json", "r") as f: scores = json.load(f)
+                                  except: scores = []
+                                  
+                                  scores.append({"name": self.input_name if self.input_name.strip() else "Anonymous", "score": self.score, "wave": self.wave_num - 1})
+                                  scores.sort(key=lambda x: x["score"], reverse=True)
+                                  
+                                  with open("score.json", "w") as f: json.dump(scores, f, indent=4)
+                              except Exception as err: print(f"Score Save Error: {err}")
+                              
+                              self.state = 'MENU'
+                              self.game_over_timer = 0
+                              self.input_active = False # Reset
+                              pygame.mixer.stop()
+                              
+                         elif self.input_focus == 0:
+                              if e.key == pygame.K_BACKSPACE:
+                                  self.input_name = self.input_name[:-1]
+                              else:
+                                  if len(self.input_name) < 12 and e.unicode.isprintable():
+                                      self.input_name += e.unicode
                 continue
                 
             if e.type == pygame.KEYDOWN:
                 self.cheat_buf = (self.cheat_buf + e.unicode).upper()[-10:]
-                if "PIZZA" in self.cheat_buf: self.pizzas_made, self.round_p, self.cheat_buf = self.pizzas_made + 15, self.round_p + 15, ""
+                if "PIZZA" in self.cheat_buf: self.pizzas_made, self.round_p, self.cheat_buf, self.cheated = self.pizzas_made + 15, self.round_p + 15, "", True
                 if "INV" in self.cheat_buf: 
                     for k in self.player.inventory.counts: self.player.inventory.counts[k] = self.player.inventory.cap
-                    self.cheat_buf = ""
+                    self.cheat_buf, self.cheated = "", True
                 if "SKIP" in self.cheat_buf: 
-                    self.round_p, self.wave_timer, self.cheat_buf = self.pizza_goal, 0, ""
+                    self.round_p, self.wave_timer, self.cheat_buf, self.cheated = self.pizza_goal, 0, "", True
                     self.reset_bonus_effects()
                     pygame.mixer.stop()
                     self.stop_music()
                     self.is_fast = True
                 if "OVER" in self.cheat_buf: 
-                    self.state, self.cheat_buf = 'GAME_OVER', ""
+                    self.state, self.cheat_buf, self.cheated = 'GAME_OVER', "", True
                     self.game_over_timer = 0
                     pygame.mixer.stop()
-                if "KILL" in self.cheat_buf: self.player.health, self.cheat_buf = 0, ""
-                if "HEAL" in self.cheat_buf: self.player.health, self.cheat_buf = self.player.max_health, ""
+                if "KILL" in self.cheat_buf: self.player.health, self.cheat_buf, self.cheated = 0, "", True
+                if "HEAL" in self.cheat_buf: self.player.health, self.cheat_buf, self.cheated = self.player.max_health, "", True
             if self.state == 'MENU':
                 res = self.menu.handle_events(e)
                 if res == "START": self.start(sandbox=False)
@@ -470,11 +517,15 @@ class Game:
                 avail_m = [m for m in self.malus_manager.maluses if m != self.malus_manager.current_malus]
                 if not avail_m: avail_m = self.malus_manager.maluses
 
+                # Filter previous bonus
+                avail_b = [b for b in self.bonus_manager.bonuses if b != self.last_bonus]
+                if not avail_b: avail_b = self.bonus_manager.bonuses
+
                 # Launch Roulette
                 if self.sandbox:
                      self.roulette_menu.start_sandbox(self.malus_manager.maluses, w_opts, self.bonus_manager.bonuses)
                 else:
-                     self.roulette_menu.start(avail_m, avail_w, self.bonus_manager.bonuses)
+                     self.roulette_menu.start(avail_m, avail_w, avail_b)
 
         elif self.state == 'ROULETTE':
              if self.roulette_menu.update(dt):
@@ -508,6 +559,7 @@ class Game:
                  
                  # Apply Bonus
                  self.bonus_manager.new_round(self.roulette_menu.selected_bonus)
+                 self.last_bonus = self.roulette_menu.selected_bonus
                  
                  # Restart music slow
                  self.start_music()
@@ -550,8 +602,43 @@ class Game:
             self.screen.blit(t_wave, (center_x - t_wave.get_width()//2, h//2))
             self.screen.blit(t_pizza, (center_x - t_pizza.get_width()//2, h//2 + 50))
 
-            # Press Space Center 
-            if self.game_over_timer > 2.0:
+            # Input Dialog / Press Space
+            if self.input_active:
+                # Dialog Box
+                d_w, d_h = 500, 300
+                d_rect = pygame.Rect((w - d_w)//2, (h - d_h)//2, d_w, d_h)
+                
+                # Background
+                if self.ui.bg_panel:
+                    self.screen.blit(pygame.transform.scale(self.ui.bg_panel, (d_w, d_h)), d_rect)
+                else:
+                    pygame.draw.rect(self.screen, (30, 35, 50), d_rect, border_radius=15)
+                    pygame.draw.rect(self.screen, (100, 110, 140), d_rect, 3, border_radius=15)
+                
+                # Title
+                t_lbl = self.font.render("Entrez votre pseudo", True, (255, 255, 255))
+                self.screen.blit(t_lbl, (d_rect.centerx - t_lbl.get_width()//2, d_rect.y + 40))
+                
+                # Input Field
+                i_w, i_h = 300, 50
+                i_rect = pygame.Rect((w - i_w)//2, d_rect.y + 110, i_w, i_h)
+                col_i = (255, 215, 0) if self.input_focus == 0 else (100, 100, 100)
+                pygame.draw.rect(self.screen, (20, 20, 30), i_rect, border_radius=8)
+                pygame.draw.rect(self.screen, col_i, i_rect, 3, border_radius=8)
+                
+                t_name = self.font.render(self.input_name, True, (255, 255, 255))
+                self.screen.blit(t_name, (i_rect.centerx - t_name.get_width()//2, i_rect.centery - t_name.get_height()//2))
+                
+                # Validate Button
+                b_w, b_h = 160, 50
+                b_rect = pygame.Rect((w - b_w)//2, d_rect.y + 200, b_w, b_h)
+                col_b = (255, 215, 0) if self.input_focus == 1 else (60, 60, 60)
+                pygame.draw.rect(self.screen, col_b, b_rect, border_radius=8)
+                
+                t_val = self.font.render("VALIDER", True, (0, 0, 0) if self.input_focus == 1 else (200, 200, 200))
+                self.screen.blit(t_val, (b_rect.centerx - t_val.get_width()//2, b_rect.centery - t_val.get_height()//2))
+                
+            elif self.game_over_timer > 2.0:
                 # Pulse alpha
                 alpha = int(127 + 127 * math.sin(pygame.time.get_ticks() * 0.005))
                 t2 = self.font.render(settings.TEXT_RETURN_MENU, True, (200, 200, 200))
