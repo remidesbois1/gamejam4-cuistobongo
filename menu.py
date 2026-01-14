@@ -108,6 +108,7 @@ class Menu:
         if action == "START": return "START"
         if action == "QUIT": return "QUIT"
         if action == "SANDBOX": return "SANDBOX"
+        if action == "TUTO": return "TUTO"
         if action == "STORY": self.in_story = True
         return None
 

@@ -78,6 +78,30 @@ TEXT_SHOP_BUY = "Appuyer sur E ou ESPACE"
 TEXT_GAME_OVER = "GAME OVER"
 TEXT_RETURN_MENU = "PRESS ESPACE TO RETURN TO MENU"
 
+# Tutorial
+TUTORIAL_TEXTS = {
+    1: [
+        "Bienvenue ! Ici, les roches et les arbres sont incassables ! Allez dans l'autre dimension en traversant un portail.",
+        "Cassez un Arbre à Pâte et un crystal de fromage en jouant de votre instrument (E ou Espace)."
+    ],
+    2: [
+        "Bravo ! Revenez maintenant dans le monde normal. Le but du jeu est de cuisiner le plus de pizzas possible.",
+        "Interagissez avec le four (E ou Espace) et cuisinez une Pizza Vide avant que le temps ne s'écoule."
+    ],
+    3: [
+        "Un monstre ! Utilisez le Saxophone (E/Espace) pour attaquer. Si vous tombez à court de PV, vous perdrez tout vos items, et vous serez envoyé 30 secondes dans le futur.",
+        "Tuez des tomates sauvages pour en récupérer et cuisinez une Pizza Tomate avant que le temps ne s'écoule."
+    ],
+    4: [
+        "Utilisez la Flûte de Pan pour aller plus vite. Mais celle-ci est plus difficile à jouer.",
+        "Fabriquez une Pizza Margherita, en partie normale, vous avez un quota de pizza à atteindre par vague, si il n'est pas atteint, la partie s'arrête."
+    ],
+    5: [
+        "Fabriquez 3 pizzas double fromage. Votre sac à dos est limité à 3x chaque ingrédient, jouez stratégiquement.",
+        "Votre capacité pourra être augmentée au fur et à mesure de la partie."
+    ]
+}
+
 # Colors
 CLR_UI_PANEL = (30, 35, 50)
 CLR_UI_BORDER = (100, 110, 140)

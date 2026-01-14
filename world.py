@@ -55,10 +55,10 @@ class WorldManager:
         if not self.res_manager.is_safe(x, y, size): return False
         return True
 
-    def spawn(self, extra=0):
+    def spawn(self, extra=0, tutorial_stage=0):
         w, h = settings.MAP_WIDTH, settings.MAP_HEIGHT
         self.res_manager.spawn(self.is_safe, w, h)
-        self.enemy_manager.spawn(self.is_safe, w, h, extra=extra)
+        self.enemy_manager.spawn(self.is_safe, w, h, extra=extra, tutorial_stage=tutorial_stage)
 
     def trigger_weapon(self, p):
         if self.cd > 0: return False

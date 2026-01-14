@@ -8,18 +8,19 @@ class EnemyManager:
         self.projectiles = []
         self.drops = []
 
-    def spawn(self, safe_func, w, h, extra=0):
+    def spawn(self, safe_func, w, h, extra=0, tutorial_stage=0):
         self.enemies.clear()
         self.projectiles.clear()
         self.drops.clear()
         
-        # Squids
-        for _ in range(15 + extra):
-            for _ in range(50):
-                ex, ey = random.uniform(300, w - 300), random.uniform(300, h - 300)
-                if safe_func(ex, ey, 100):
-                    self.enemies.append(Squid(ex, ey))
-                    break
+        # Squids (Do not spawn in Tutorial Phase 1)
+        if tutorial_stage != 1:
+            for _ in range(15 + extra):
+                for _ in range(50):
+                    ex, ey = random.uniform(300, w - 300), random.uniform(300, h - 300)
+                    if safe_func(ex, ey, 100):
+                        self.enemies.append(Squid(ex, ey))
+                        break
         
         # Tomatoes
         for _ in range(28 + extra):

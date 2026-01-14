@@ -155,7 +155,7 @@ class BonusManager:
             overlay.set_alpha(25) 
             surface.blit(overlay, (0, 0), special_flags=pygame.BLEND_ADD)
             
-        if self.active_bonus and self.active_bonus.name == "Boussole s'affole":
+        if self.active_bonus and self.active_bonus.name == "Cinquième Sens":
             self.draw_compass(surface, player)
 
     def draw_compass(self, surface, player):

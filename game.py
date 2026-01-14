@@ -64,9 +64,11 @@ class Game:
         self.mus_chan_drug = None
         self.is_fast = False
         self.music_start_time = 0
+        self.tutorial_stage = 0
 
     def start(self, sandbox=False):
         self.sandbox = sandbox
+        self.tutorial_stage = 0
         pygame.mixer.stop()
         self.map, self.pizzas_made = Map(), 0
         self.om = OrderManager()
@@ -91,6 +93,36 @@ class Game:
             self.start_music()
 
         self.malus_manager.new_round(malus="NO_MALUS")
+
+    def start_tutorial(self):
+        self.stop_music()
+        self.map, self.pizzas_made = Map(), 0
+        self.om = OrderManager()
+        self.player = Player(settings.MAP_WIDTH//2+settings.PLAYER_SIZE, settings.MAP_HEIGHT//2-settings.PLAYER_SIZE//2, self.map)
+        
+        self.player.weapon = "drum_weapon"
+        self.last_weapon = "drum_weapon"
+        
+        self.world = WorldManager(self.map)
+        self.world.spawn(tutorial_stage=1)
+        self.malus_manager = MalusManager(self.world)
+        self.bonus_manager = BonusManager(self.world)
+        
+        self.camera = Camera(settings.MAP_WIDTH, settings.MAP_HEIGHT)
+        self.ui, self.recipe_menu, self.shop_menu, self.roulette_menu = UI(self.font), RecipeMenu(self.font), ShopMenu(self.font), RouletteMenu(self.font)
+        self.ui.game_ptr = self
+        
+        self.score, self.f_a, self.wave_timer, self.wave_num = 0, 0, 999999, 1
+        self.state = 'TUTORIAL'
+        self.tutorial_stage = 1
+        self.tutorial_text_idx = 0
+        self.pizza_goal, self.round_p = 0, 0
+        self.sandbox = False
+        
+        self.malus_manager.new_round(malus="NO_MALUS")
+        
+        # if self.music_normal and self.music_upside:
+        #     self.start_music()
     
     def get_slice(self, sound, pct):
         try:
@@ -116,12 +148,16 @@ class Game:
         if self.player: self.player.speed_multiplier = 1.0
         if self.world: self.world.cd_limit_multiplier = 1.0
 
-    def start_music(self):
+    def start_music(self, fast=False):
         self.stop_music()
-        self.is_fast = False
-        if self.music_normal and self.music_upside:
-            self.mus_chan_n = self.music_normal.play(loops=-1)
-            self.mus_chan_u = self.music_upside.play(loops=-1)
+        self.is_fast = fast
+        
+        target_n = self.music_normal_fast if fast else self.music_normal
+        target_u = self.music_upside_fast if fast else self.music_upside
+
+        if target_n and target_u:
+            self.mus_chan_n = target_n.play(loops=-1)
+            self.mus_chan_u = target_u.play(loops=-1)
             self.music_start_time = pygame.time.get_ticks()
             
             vol_n = settings.MUSIC_VOLUME if self.world and self.world.dim == 1 else 0.0
@@ -210,6 +246,7 @@ class Game:
                 res = self.menu.handle_events(e)
                 if res == "START": self.start(sandbox=False)
                 elif res == "SANDBOX": self.start(sandbox=True)
+                elif res == "TUTO": self.start_tutorial()
                 elif res == "QUIT": self.running = False
             elif self.state == 'PLAYING':
                 if self.recipe_menu.is_open:
@@ -222,6 +259,15 @@ class Game:
                     else: self.world.trigger_weapon(self.player)
             elif self.state == 'SHOP': self.shop_menu.handle_input(e, self)
             elif self.state == 'ROULETTE': self.roulette_menu.handle_input(e)
+            elif self.state == 'TUTORIAL':
+                if self.recipe_menu.is_open:
+                    p = self.recipe_menu.handle_input(e, self.player, self.om)
+                    if p and p > 0:
+                        self.pizzas_made += 1
+                elif e.type == pygame.KEYDOWN and e.key in settings.KEYS_INTERACT:
+                    self.tutorial_text_idx = (self.tutorial_text_idx + 1) % 2
+                    if self.world.oven.active: self.recipe_menu.toggle()
+                    else: self.world.trigger_weapon(self.player)
 
     def update(self, dt):
         if self.state not in ['MENU', 'GAME_OVER'] and self.world and self.mus_chan_n and self.mus_chan_u:
@@ -247,7 +293,17 @@ class Game:
                  self.world.dim = 1
                  self.wave_timer -= settings.DEATH_PENALTY_TIME
                  self.pizzas_made //= settings.DEATH_PIZZA_PENALTY_DIVISOR
-                 self.state = 'PLAYING'
+                 self.pizzas_made //= settings.DEATH_PIZZA_PENALTY_DIVISOR
+                 self.pizzas_made //= settings.DEATH_PIZZA_PENALTY_DIVISOR
+                 self.state = 'TUTORIAL' if self.tutorial_stage > 0 else 'PLAYING'
+                 
+                 # Fix Music Glitch (Double Playing)
+                 pygame.mixer.stop()
+                 self.stop_music()
+                 # Recalculate if we should be fast
+                 should_be_fast = (self.wave_timer <= settings.MUSIC_SPEEDUP_TIME)
+                 if self.music_normal and self.music_upside:
+                     self.start_music(fast=should_be_fast)
         elif self.state == 'PLAYING':
             # Drug Effect Logic
             if self.bonus_manager.pill_effect_timer > 0:
@@ -282,11 +338,8 @@ class Game:
                 self.player.on_death()
                 self.state = 'DYING'
                 self.death_timer = 0
-                if self.mus_chan_drug:
-                    self.mus_chan_drug.stop()
-                    self.mus_chan_drug = None
-                    if self.mus_chan_n: self.mus_chan_n.unpause()
-                    if self.mus_chan_u: self.mus_chan_u.unpause()
+                pygame.mixer.stop()
+                self.stop_music() # Clear references
                 return
             
             if self.world.update(self.player, dt): self.f_a = 255
@@ -316,6 +369,68 @@ class Game:
                     self.reset_bonus_effects()
                     pygame.mixer.stop()
                     self.stop_music()
+
+        elif self.state == 'TUTORIAL':
+             if not self.recipe_menu.is_open: self.player.handle_input(dt)
+             
+             if self.player.health <= 0:
+                self.player.on_death()
+                self.state = 'DYING'
+                self.death_timer = 0
+                return
+
+             if self.world.update(self.player, dt): self.f_a = 255
+             
+             if self.player.needs_shake:
+                self.camera.start_shake(10, 0.3)
+                self.player.needs_shake = False
+
+             self.f_a = max(0, self.f_a - 1000 * dt)
+             self.camera.update(self.player.rect, dt)
+             self.recipe_menu.update(dt)
+             self.om.update(dt, tutorial_mode=True)
+             self.bonus_manager.update(dt, self.player)
+
+             if self.recipe_menu.is_open and not self.world.oven.active: self.recipe_menu.toggle()
+             
+             if self.tutorial_stage == 1:
+                 cheese = self.player.inventory.counts.get("cheese", 0)
+                 dough = self.player.inventory.counts.get("dough", 0)
+                 if cheese >= 1 and dough >= 1:
+                     self.tutorial_stage = 2
+                     self.tutorial_text_idx = 0
+                     self.om.setup_tutorial_order()
+
+             if self.tutorial_stage == 2:
+                 # Check if pizza made (pizze_made increments in handle via handle_input for recipe_menu)
+                 if self.pizzas_made >= 1:
+                     self.tutorial_stage = 3
+                     self.tutorial_text_idx = 0
+                     self.player.weapon = "sax_weapon"
+                     self.last_weapon = "sax_weapon"
+                     self.world.spawn(tutorial_stage=3)
+                     self.om.setup_tutorial_order(recipe_index=2) # Pizza Tomate
+
+             if self.tutorial_stage == 3:
+                if self.pizzas_made >= 2:
+                     self.tutorial_stage = 4
+                     self.tutorial_text_idx = 0
+                     self.player.weapon = "pan_weapon"
+                     self.last_weapon = "pan_weapon"
+                     self.world.spawn(tutorial_stage=4)
+                     self.om.setup_tutorial_order(recipe_index=0) # Pizza Margherita
+
+             if self.tutorial_stage == 4:
+                if self.pizzas_made >= 3:
+                     self.tutorial_stage = 5
+                     self.tutorial_text_idx = 0
+                     self.world.spawn(tutorial_stage=5)
+                     self.om.setup_tutorial_order(recipe_index=3, count=3) # Pizza Double Fromage
+
+             if self.tutorial_stage == 5:
+                if self.pizzas_made >= 6:
+                     self.state = 'MENU'
+                     pygame.mixer.stop()
 
         elif self.state == 'SHOP':
             if self.wave_timer <= 0:
@@ -409,12 +524,18 @@ class Game:
             self.screen.blit(score_txt, (settings.SCREEN_WIDTH//2 - score_txt.get_width()//2, 20))
             
             if self.state != 'DYING':
-                self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal, self.malus_manager.current_malus)
+                self.ui.draw(self.screen, self.player.inventory, self.pizzas_made, self.wave_num, max(0, self.wave_timer), self.player.health, self.player.max_health, self.player.weapon, self.round_p, self.pizza_goal, self.malus_manager.current_malus, is_tutorial=(self.state == 'TUTORIAL'))
             
             if self.state != 'SHOP': self.recipe_menu.draw(self.screen, self.player.inventory, self.om)
             if self.world.dim == self.world.oven.dim: self.ui.draw_arrow(self.screen, self.player.rect, self.world.oven.rect)
             if self.state == 'SHOP': self.shop_menu.draw(self.screen, self)
             if self.state == 'ROULETTE': self.roulette_menu.draw(self.screen)
+            
+            if self.state == 'TUTORIAL':
+                msgs = settings.TUTORIAL_TEXTS.get(self.tutorial_stage, ["", ""])
+                txt = msgs[self.tutorial_text_idx] if self.tutorial_text_idx < len(msgs) else msgs[0]
+                self.ui.draw_tutorial_panel(self.screen, txt, self.tutorial_text_idx, len(msgs))
+
         pygame.display.flip()
     def run(self):
         while self.running:

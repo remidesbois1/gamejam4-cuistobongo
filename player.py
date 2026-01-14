@@ -14,6 +14,7 @@ class Player:
         self.dash_timer = 0
         self.dash_vec = pygame.Vector2(0, 0)
         self.img_body, self.img_pan, self.legs, self.frame, self.anim_t = None, None, [], 0, 0
+        self.speed_multiplier = 1.0
         self.dmg_sounds = []
         try:
             self.img_body = pygame.transform.scale(pygame.image.load("assets/chief_bomgo.png").convert_alpha(), (settings.PLAYER_SIZE, settings.PLAYER_SIZE))

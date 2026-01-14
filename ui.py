@@ -11,38 +11,39 @@ class UI:
         self.bg_panel = pygame.image.load("assets/ui_panel.png").convert_alpha()
         self.game_ptr = None
 
-    def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None, round_p=0, p_goal=1, malus=None):
-        time_str = f"{int(wave_timer//60):02d}:{int(wave_timer%60):02d}"
-        main_text = f"VAGUE {wave_num}   -   {time_str}"
-        
-        tw, th = self.large_font.size(main_text)
-        
-        bw, bh = 350, th + 30
-        b_rect = pygame.Rect(settings.SCREEN_WIDTH//2 - bw//2, 12, bw, bh)
-        
-        if self.bg_panel:
-            surface.blit(pygame.transform.scale(self.bg_panel, b_rect.size), b_rect)
+    def draw(self, surface, inv, p_made, wave_num, wave_timer, hp, max_hp, weapon=None, round_p=0, p_goal=1, malus=None, is_tutorial=False):
+        if not is_tutorial:
+            time_str = f"{int(wave_timer//60):02d}:{int(wave_timer%60):02d}"
+            main_text = f"VAGUE {wave_num}   -   {time_str}"
+            
+            tw, th = self.large_font.size(main_text)
+            
+            bw, bh = 350, th + 30
+            b_rect = pygame.Rect(settings.SCREEN_WIDTH//2 - bw//2, 12, bw, bh)
+            
+            if self.bg_panel:
+                surface.blit(pygame.transform.scale(self.bg_panel, b_rect.size), b_rect)
 
-        # Text
-        txt = self.large_font.render(main_text, True, settings.CLR_TEXT_CREAM)
-        surface.blit(txt, (settings.SCREEN_WIDTH//2 - tw//2, b_rect.centery - th//2))
-        
-        # Hurry Up Text
-        if wave_timer <= settings.MUSIC_SPEEDUP_TIME and self.game_ptr and self.game_ptr.state == 'PLAYING':
-             h_txt = self.large_font.render("Dépêchez-vous !!", True, (255, 50, 50))
-             angle = math.sin(pygame.time.get_ticks() * 0.01) * 5
-             rot_txt = pygame.transform.rotate(h_txt, angle)
-             surface.blit(rot_txt, (settings.SCREEN_WIDTH//2 - rot_txt.get_width()//2, b_rect.bottom + 10))
+            # Text
+            txt = self.large_font.render(main_text, True, settings.CLR_TEXT_CREAM)
+            surface.blit(txt, (settings.SCREEN_WIDTH//2 - tw//2, b_rect.centery - th//2))
+            
+            # Hurry Up Text
+            if wave_timer <= settings.MUSIC_SPEEDUP_TIME and self.game_ptr and self.game_ptr.state == 'PLAYING':
+                 h_txt = self.large_font.render("Dépêchez-vous !!", True, (255, 50, 50))
+                 angle = math.sin(pygame.time.get_ticks() * 0.01) * 5
+                 rot_txt = pygame.transform.rotate(h_txt, angle)
+                 surface.blit(rot_txt, (settings.SCREEN_WIDTH//2 - rot_txt.get_width()//2, b_rect.bottom + 10))
 
-        prect = pygame.Rect(20, 20, 150, 70)
-        if self.bg_panel:
-            surface.blit(pygame.transform.scale(self.bg_panel, prect.size), prect)
+            prect = pygame.Rect(20, 20, 150, 70)
+            if self.bg_panel:
+                surface.blit(pygame.transform.scale(self.bg_panel, prect.size), prect)
 
-        # Goal
-        surface.blit(self.icons["pizza_stat"], (prect.x + 15, prect.y + 15))
-        clr = (50, 255, 50) if round_p >= p_goal else (255, 255, 255)
-        txt = self.count_f.render(f"{round_p}/{p_goal}", True, clr)
-        surface.blit(txt, (prect.x + 65, prect.y + 23))
+            # Goal
+            surface.blit(self.icons["pizza_stat"], (prect.x + 15, prect.y + 15))
+            clr = (50, 255, 50) if round_p >= p_goal else (255, 255, 255)
+            txt = self.count_f.render(f"{round_p}/{p_goal}", True, clr)
+            surface.blit(txt, (prect.x + 65, prect.y + 23))
 
         if malus:
             # Show only for first 20 seconds of the wave
@@ -161,6 +162,43 @@ class UI:
             pen_txt = self.large_font.render("-30s", True, (160, 0, 0))
             self.large_font.set_bold(False)
             surface.blit(pen_txt, (cur_x, b_rect.centery - pen_txt.get_height()//2))
+
+    def draw_tutorial_panel(self, surface, text, page_idx, total_pages=2):
+        panel_rect = pygame.Rect(0, 50, 800, 150)
+        panel_rect.centerx = settings.SCREEN_WIDTH // 2
+        
+        if self.bg_panel:
+            surface.blit(pygame.transform.scale(self.bg_panel, panel_rect.size), panel_rect)
+        else:
+            pygame.draw.rect(surface, (30, 25, 40), panel_rect, border_radius=15)
+            pygame.draw.rect(surface, (255, 215, 0), panel_rect, 3, border_radius=15)
+
+        lines = []
+        words = text.split(' ')
+        cur_line = ""
+        max_w = panel_rect.width - 60
+        
+        for w in words:
+            test_line = cur_line + w + " "
+            if self.count_f.size(test_line)[0] < max_w:
+                cur_line = test_line
+            else:
+                lines.append(cur_line)
+                cur_line = w + " "
+        lines.append(cur_line)
+        
+        # Draw Lines
+        line_h = self.count_f.get_height() + 5
+        total_h = len(lines) * line_h
+        start_y = panel_rect.centery - total_h // 2
+        
+        for i, l in enumerate(lines):
+            t_surf = self.count_f.render(l, True, settings.CLR_TEXT_CREAM)
+            surface.blit(t_surf, (panel_rect.centerx - t_surf.get_width()//2, start_y + i * line_h))
+
+        # Page Indicator
+        pg_txt = self.font.render(f"{page_idx + 1}/{total_pages}", True, (200, 200, 200))
+        surface.blit(pg_txt, (panel_rect.right - 50, panel_rect.bottom - 30))
 
 class RouletteSlot:
     def __init__(self, items, font, frame_title, tick_sound=None):
