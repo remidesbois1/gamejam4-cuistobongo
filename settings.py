@@ -7,6 +7,8 @@ FPS = 60
 TILE_SIZE = 40
 FONT_NAME = "assets/Handpixies.ttf"
 MUSIC_VOLUME = 0.3
+MENU_OFFSET_X = 327
+MENU_OFFSET_Y = 120
 
 # Colors
 WHITE = (255, 255, 255)

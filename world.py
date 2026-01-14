@@ -108,7 +108,10 @@ class WorldManager:
         for po in self.portals:
             if p.rect.colliderect(po.rect):
                 coll = True
-                if not self.in_p and p.rect.colliderect(po.get_hitbox()): self.dim, self.in_p = 1 - self.dim, True; return True
+                if not self.in_p and p.rect.colliderect(po.get_hitbox()): 
+                    self.dim, self.in_p = 1 - self.dim, True
+                    p.inv_timer = 0.2
+                    return True
                 break
         if not coll: self.in_p = False
         

@@ -142,6 +142,9 @@ class Game:
         if self.mus_chan_drug:
             self.mus_chan_drug.stop()
             self.mus_chan_drug = None
+            
+        self.current_n_loop = None
+        self.current_u_loop = None
 
     def reset_bonus_effects(self):
         if self.bonus_manager: self.bonus_manager.pill_effect_timer = 0
@@ -399,6 +402,7 @@ class Game:
                  if cheese >= 1 and dough >= 1:
                      self.tutorial_stage = 2
                      self.tutorial_text_idx = 0
+                     self.player.inventory.counts = {"cheese": 0, "tomato": 0, "dough": 0}
                      self.om.setup_tutorial_order()
 
              if self.tutorial_stage == 2:
@@ -406,6 +410,7 @@ class Game:
                  if self.pizzas_made >= 1:
                      self.tutorial_stage = 3
                      self.tutorial_text_idx = 0
+                     self.player.inventory.counts = {"cheese": 0, "tomato": 0, "dough": 0}
                      self.player.weapon = "sax_weapon"
                      self.last_weapon = "sax_weapon"
                      self.world.spawn(tutorial_stage=3)
@@ -415,6 +420,7 @@ class Game:
                 if self.pizzas_made >= 2:
                      self.tutorial_stage = 4
                      self.tutorial_text_idx = 0
+                     self.player.inventory.counts = {"cheese": 0, "tomato": 0, "dough": 0}
                      self.player.weapon = "pan_weapon"
                      self.last_weapon = "pan_weapon"
                      self.world.spawn(tutorial_stage=4)
@@ -424,6 +430,7 @@ class Game:
                 if self.pizzas_made >= 3:
                      self.tutorial_stage = 5
                      self.tutorial_text_idx = 0
+                     self.player.inventory.counts = {"cheese": 0, "tomato": 0, "dough": 0}
                      self.world.spawn(tutorial_stage=5)
                      self.om.setup_tutorial_order(recipe_index=3, count=3) # Pizza Double Fromage
 

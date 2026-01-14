@@ -33,9 +33,30 @@ class Menu:
         
         cx = settings.SCREEN_WIDTH // 2
         sy = 400
-        for i, opt in enumerate(self.options):
-            txt = self.font.render(opt["label"], True, (255, 255, 255))
-            opt["rect"] = txt.get_rect(center=(cx, sy + i * 70))
+        
+        # Layout Calculation
+        start_x = settings.MENU_OFFSET_X
+        unit_w = 240
+        unit_h = 75
+        gap = 15
+        
+        # Calculate start_y to center vertically + offset
+        total_h = 3 * unit_h + 2 * gap
+        start_y = (settings.SCREEN_HEIGHT - total_h) // 2 + settings.MENU_OFFSET_Y
+
+        # Assign rects manually for the grid layout
+        # 0: JOUER (Row 0, Spans 2 cols)
+        self.options[0]["rect"] = pygame.Rect(start_x, start_y, 2 * unit_w + gap, unit_h)
+        
+        # 1: HISTOIRE (Row 1, Col 0)
+        self.options[1]["rect"] = pygame.Rect(start_x, start_y + unit_h + gap, unit_w, unit_h)
+        # 2: TUTO (Row 1, Col 1)
+        self.options[2]["rect"] = pygame.Rect(start_x + unit_w + gap, start_y + unit_h + gap, unit_w, unit_h)
+        
+        # 3: SANDBOX (Row 2, Col 0)
+        self.options[3]["rect"] = pygame.Rect(start_x, start_y + 2*(unit_h + gap), unit_w, unit_h)
+        # 4: QUIT (Row 2, Col 1)
+        self.options[4]["rect"] = pygame.Rect(start_x + unit_w + gap, start_y + 2*(unit_h + gap), unit_w, unit_h)
 
         self.panel_rect = pygame.Rect(0, 0, 900, 500)
         self.panel_rect.center = (settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2)
@@ -54,7 +75,7 @@ class Menu:
         self.total_h = len(self.story_lines) * self.line_h
         self.max_scroll = max(0, self.total_h - self.view_rect.height)
         
-        self.mute_rect = pygame.Rect(settings.SCREEN_WIDTH - 160, settings.SCREEN_HEIGHT - 60, 140, 40)
+        self.mute_rect = pygame.Rect(80, settings.SCREEN_HEIGHT - 60, 140, 40)
 
     def wrap_text(self, text, font, inner_width):
         lines = []
@@ -90,8 +111,37 @@ class Menu:
         else:
             self.manager.process_events(e)
             if e.type == pygame.KEYDOWN:
-                if e.key in settings.KEYS_UP: self.selection = (self.selection - 1) % len(self.options)
-                if e.key in settings.KEYS_DOWN: self.selection = (self.selection + 1) % len(self.options)
+                # Grid Navigation Logic
+                # 0: JOUER (Top)
+                # 1: HISTOIRE (Mid Left)  2: TUTO (Mid Right)
+                # 3: SANDBOX (Bot Left)   4: QUIT (Bot Right)
+
+                if e.key in settings.KEYS_UP:
+                    if self.selection == 0: self.selection = 3 # Loop to bottom
+                    elif self.selection in [1, 2]: self.selection = 0
+                    elif self.selection == 3: self.selection = 1
+                    elif self.selection == 4: self.selection = 2
+                    
+                elif e.key in settings.KEYS_DOWN:
+                    if self.selection == 0: self.selection = 1 # Default to left col
+                    elif self.selection == 1: self.selection = 3
+                    elif self.selection == 2: self.selection = 4
+                    elif self.selection in [3, 4]: self.selection = 0 # Loop to top
+
+                elif e.key in settings.KEYS_LEFT:
+                    if self.selection == 2: self.selection = 1
+                    elif self.selection == 4: self.selection = 3
+                    elif self.selection == 0: self.selection = 4 # Loop
+                    elif self.selection == 1: self.selection = 2 # Loop
+                    elif self.selection == 3: self.selection = 4 # Loop
+
+                elif e.key in settings.KEYS_RIGHT:
+                    if self.selection == 1: self.selection = 2
+                    elif self.selection == 3: self.selection = 4
+                    elif self.selection == 0: self.selection = 3 # Loop
+                    elif self.selection == 2: self.selection = 1 # Loop
+                    elif self.selection == 4: self.selection = 3 # Loop
+                    
                 if e.key in settings.KEYS_VALIDATE:
                     return self.trigger(self.options[self.selection]["action"])
             elif e.type == pygame.MOUSEMOTION:
@@ -161,35 +211,80 @@ class Menu:
 
         else:
             for i, opt in enumerate(self.options):
-                col = (255, 215, 0) if i == self.selection else (255, 255, 255)
+                # Determine colors
+                is_sel = (i == self.selection)
+                label = opt["label"]
                 
-                bg_rect = opt["rect"].inflate(60, 20)
-                bs = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
-                bg_col = (50, 0, 0, 180) if i == self.selection else (20, 20, 30, 150)
-                pygame.draw.rect(bs, bg_col, (0,0,bg_rect.w, bg_rect.h), border_radius=15)
-                if i == self.selection:
-                    pygame.draw.rect(bs, (255, 215, 0), (0,0,bg_rect.w, bg_rect.h), 2, border_radius=15)
-                self.screen.blit(bs, bg_rect.topleft)
+                # Base transparent surface
+                rect = opt["rect"]
+                bs = pygame.Surface((rect.w, rect.h), pygame.SRCALPHA)
+                
+                # Default Colors
+                bg_color = (20, 20, 30, 150)
+                text_color = (255, 255, 255)
+                border_color = None
+                
+                # Specific Styles
+                if label == "JOUER":
+                    if is_sel:
+                        bg_color = (0, 100, 0, 200)
+                        text_color = (50, 255, 50)
+                        border_color = (50, 255, 50)
+                    else:
+                        bg_color = (0, 50, 0, 150)
+                        text_color = (150, 255, 150)
+                elif label == "QUITTER":
+                    if is_sel:
+                        bg_color = (100, 0, 0, 200)
+                        text_color = (255, 50, 50)
+                        border_color = (255, 50, 50)
+                    else:
+                        bg_color = (50, 0, 0, 150)
+                        text_color = (255, 150, 150)
+                else:
+                    # Standard Button
+                    if is_sel:
+                        bg_color = (50, 50, 70, 200)
+                        text_color = (255, 215, 0)
+                        border_color = (255, 215, 0)
+                
+                # Draw Background
+                pygame.draw.rect(bs, bg_color, bs.get_rect(), border_radius=15)
+                if border_color:
+                    pygame.draw.rect(bs, border_color, bs.get_rect(), 3, border_radius=15)
+                
+                self.screen.blit(bs, rect.topleft)
 
-                shad = self.font.render(opt["label"], True, (0, 0, 0))
-                self.screen.blit(shad, (opt["rect"].x + 2, opt["rect"].y + 2))
-                txt = self.font.render(opt["label"], True, col)
-                self.screen.blit(txt, opt["rect"])
+                # Draw Text
+                shad = self.font.render(label, True, (0, 0, 0))
+                txt = self.font.render(label, True, text_color)
                 
-                if i == self.selection:
-                    cursor = self.font.render(">", True, (255, 215, 0))
+                txt_rect = txt.get_rect(center=rect.center)
+                shad_rect = shad.get_rect(center=(rect.centerx + 2, rect.centery + 2))
+                
+                self.screen.blit(shad, shad_rect)
+                self.screen.blit(txt, txt_rect)
+                
+                # Selection Cursor
+                if is_sel:
                     off = math.sin(pygame.time.get_ticks() * 0.01) * 5
-                    self.screen.blit(cursor, (opt["rect"].x - 40 + off, opt["rect"].y))
+                    cursor_col = text_color
+                    cursor = self.font.render(">", True, cursor_col)
+                    self.screen.blit(cursor, (rect.x - 30 + off, rect.centery - cursor.get_height()//2))
 
             # Mute Button
             if hasattr(self, 'mute_rect'):
                  mx, my = pygame.mouse.get_pos()
                  hov = self.mute_rect.collidepoint((mx, my))
-                 bg_col = (100, 50, 50) if hov else (50, 30, 30)
-                 if settings.MUSIC_VOLUME == 0: bg_col = (50, 50, 50) # Muted style
                  
-                 pygame.draw.rect(self.screen, bg_col, self.mute_rect, border_radius=10)
-                 pygame.draw.rect(self.screen, (200, 200, 200), self.mute_rect, 2, border_radius=10)
+                 # Transparent bg for mute
+                 ms = pygame.Surface((self.mute_rect.w, self.mute_rect.h), pygame.SRCALPHA)
+                 mbg_col = (100, 50, 50, 200) if hov else (50, 30, 30, 150)
+                 if settings.MUSIC_VOLUME == 0: mbg_col = (50, 50, 50, 150)
+                 
+                 pygame.draw.rect(ms, mbg_col, ms.get_rect(), border_radius=10)
+                 pygame.draw.rect(ms, (200, 200, 200), ms.get_rect(), 2, border_radius=10)
+                 self.screen.blit(ms, self.mute_rect.topleft)
                  
                  txt_str = "SON: OFF" if settings.MUSIC_VOLUME == 0 else "SON: ON"
                  mt = self.story_font.render(txt_str, True, (255, 255, 255))

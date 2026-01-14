@@ -115,7 +115,7 @@ class UI:
             (ax + math.cos(angle + 2.6) * 15, ay + math.sin(angle + 2.6) * 15),
             (ax + math.cos(angle - 2.6) * 15, ay + math.sin(angle - 2.6) * 15)
         ]
-        pygame.draw.polygon(surface, (255, 50, 50), pts)
+        pygame.draw.polygon(surface, (139, 69, 19), pts)
         pygame.draw.polygon(surface, (255, 255, 255), pts, 2)
 
     def draw_penalty_anim(self, surface, death_timer, wave_num, wave_timer):
