@@ -182,9 +182,12 @@ autour des portails déplacés) ; au-delà de 12 ennemis supplémentaires (vague
 17), le moteur torch plafonne. Les mesures finales se font de toute façon sur
 le moteur headless.
 
-Débit mesuré sur CPU (1 024 parties, `python -m rl.vector.bench`) :
-**≈ 3 600 décisions/s en float64, ≈ 3 950 en float32**. Le débit GPU reste à
-mesurer : c'est la première chose à faire sur RunPod.
+Débits mesurés (`python -m rl.vector.bench`) : **≈ 3 600/3 950 décisions/s
+(float64/float32) sur CPU** (1 024 parties), **43 100/45 700 sur A100-SXM4-80GB
+sans graphe CUDA** (16 384 parties) et **≈ 57 000 en entraînement complet avec
+graphe CUDA** (32 768 parties). La boucle séquentielle des ennemis est le
+plafond : c'est une chaîne de dépendances, augmenter le nombre de parties ne
+change presque rien.
 
 ## 5. Entraîner sur RunPod
 
@@ -221,12 +224,23 @@ uv run python -m rl.watch --player runs/bongo-v1/best.pt
 Spectateur : Espace pause, ↑/↓ vitesse ×1 à ×8, Tab actions déterministes ou
 échantillonnées, N nouvelle partie, Échap quitter.
 
-### Références mesurées (20 parties, graines 700000-700019)
+### Résultats du modèle `bongo-v1` (run du 6 novembre 2026)
+
+PPO masqué, 1,45 Md de décisions (sur 2 Md prévus), ~9 h sur A100-SXM4-80GB
+(RunPod, ≈ 16 $), 57 000 décisions/s. Évaluation : 40 graines jamais vues
+(700000-700039), moteur de référence, parties complètes coupées à 21 min,
+politique déterministe (`runs/eval-1.45B-40games.json`).
 
 | Joueur | Score | Vagues validées | Pizzas | Morts | Game over |
 | --- | --- | --- | --- | --- | --- |
-| Hasard | −417 ± 71 | 0 | 0 | 0,15 | 20 / 20 |
-| Bot scripté (`rl/baselines.py`) | 621 ± 466 | 1,6 | 12,4 | 5,2 | 20 / 20 |
+| Hasard | −417 ± 71 | 0 | 0 | 0,15 | 40 / 40 |
+| Bot scripté (`rl/baselines.py`) | 621 ± 466 | 1,6 | 12,4 | 5,2 | 40 / 40 |
+| **`bongo-v1` (1,45 Md)** | **18 321 ± 3 663** | **13,1 ± 2,2** | **253 ± 48** | 9,1 | **3 / 40** |
+
+37 parties sur 40 étaient encore vivantes à la coupure de 21 min (vagues 13 à
+15 validées) ; les 3 défaites tombent à 5,5, 8,9 et 14,6 minutes. Le meilleur
+score humain honnête du scoreboard du jeu est 2 294 points (vague 4). Courbe
+complète et chronologie : `presentation/Rapport-CuistoBongo-IA.md`.
 
 Le bot scripté est une stratégie gloutonne écrite à la main (commande la plus
 urgente, ingrédient manquant, retour au four) ; il n'esquive pas. Il sert de
