@@ -6,7 +6,6 @@ Rapport de projet — l'apprentissage par renforcement appliqué à Cuisto Bongo
 
 #### Novembre 2026
 
-Cuisto Bongo — rapport IA · page 1
 
 ---
 

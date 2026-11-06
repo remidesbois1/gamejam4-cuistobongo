@@ -20,6 +20,7 @@ train = [
 dev = [
     "matplotlib>=3.11.2",
     "pytest>=8",
+    "python-docx>=1.2.0",
 ]
 
 [tool.pytest.ini_options]
