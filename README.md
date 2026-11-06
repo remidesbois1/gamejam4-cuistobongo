@@ -49,3 +49,7 @@ Ecrivez au clavier l'un de ces codes à n'importe quel moment pour tricher. Si u
 Développé par la Team Bamboo.
 
 Voir fichier "credits.txt" pour les crédits de musique et d'effets sonores.
+
+## Intelligence artificielle (branche `reinforcementLearning`)
+
+Un moteur sans affichage identique au jeu, sa version PyTorch pour l'entraînement sur GPU, un agent PPO, l'évaluation et un mode spectateur dans le vrai jeu : voir [doc/rl.md](doc/rl.md).
