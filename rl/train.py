@@ -139,8 +139,8 @@ class Evaluator:
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.output.exists():
-        parser.error("output already exists; choose a new --output directory")
+    if args.output.exists() and not args.resume:
+        parser.error("output already exists; choose a new --output directory (or pass --resume to continue it)")
     import torch
     from torch.utils.tensorboard import SummaryWriter
     from .actions import ACTION_COUNT
@@ -216,7 +216,7 @@ def main(argv=None):
     val_buf = torch.zeros(T, N, device=device)
     rew_buf = torch.zeros(T, N, device=device)
     done_buf = torch.zeros(T, N, device=device)
-    updates = math.ceil(args.timesteps / batch)
+    updates = math.ceil(max(0, args.timesteps - start_step) / batch)
     global_step = start_step
     best = payload.get("best_score", -float("inf"))
     next_eval = global_step + args.eval_every
