@@ -213,12 +213,12 @@ reprend un entraînement (réseau, optimiseur, normalisations).
 
 ```powershell
 # 40 parties inédites, jouées jusqu'au game over (max 21 min), moteur de référence :
-uv run python -m rl.evaluate --player runs/bongo-v1/best.pt --games 40 --seed 700000 --output eval.json
+uv run python -m rl.evaluate --player models/bongo-v1/model.pt --games 40 --seed 700000 --output eval.json
 uv run python -m rl.evaluate --player scripted --games 40 --seed 700000
 uv run python -m rl.evaluate --player random --games 40 --seed 700000
 
 # Regarder dans le vrai jeu (fenêtre, sons) ; pas de GPU nécessaire :
-uv run python -m rl.watch --player runs/bongo-v1/best.pt
+uv run python -m rl.watch --player models/bongo-v1/model.pt
 ```
 
 Spectateur : Espace pause, ↑/↓ vitesse ×1 à ×8, Tab actions déterministes ou

@@ -1,0 +1,70 @@
+{
+  "schema": "CuistoBongo-v1",
+  "algorithm": "PPO (on-device, masked actions)",
+  "policy": "ActorCritic",
+  "model": "best checkpoint of run bongo-v1, 1 450 180 608 decisions",
+  "env_kwargs": {
+    "frame_skip": 6,
+    "episode_limit": 12000
+  },
+  "sim_dtype": "float32",
+  "reward_weights": {
+    "score": 0.01,
+    "pizza": 1.0,
+    "wave": 3.0,
+    "game_over": -5.0,
+    "death": -1.0,
+    "damage": -0.01
+  },
+  "training_aids": {
+    "shaping": 1.0,
+    "random_start": 0.5,
+    "max_start_wave": 8
+  },
+  "resumed_from": null,
+  "seed": 1,
+  "device": "cuda",
+  "gpu": "NVIDIA A100-SXM4-80GB (RunPod)",
+  "envs": 32768,
+  "requested_timesteps": 2000000000,
+  "actual_timesteps": 1450180608,
+  "wall_hours": 9.2,
+  "approximate_cost_usd": 16,
+  "throughput_decisions_per_s": 57000,
+  "observation_size": 577,
+  "actions": 24,
+  "layouts": {
+    "size": 16384,
+    "max_extra": 12
+  },
+  "versions": {
+    "torch": "2.15.0+cu132"
+  },
+  "hyperparameters": {
+    "n_steps": 16,
+    "epochs": 4,
+    "minibatches": 8,
+    "lr": 0.0003,
+    "final_lr_fraction": 0.1,
+    "gamma": 0.998,
+    "gae_lambda": 0.95,
+    "clip": 0.2,
+    "ent_coef": 0.01,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "hidden": [512, 512, 256]
+  },
+  "evaluation": {
+    "games": 40,
+    "seeds": "700000-700039 (never used in training)",
+    "engine": "headless reference engine",
+    "episode_limit_decisions": 12600,
+    "deterministic": true,
+    "score": {"mean": 18321.1, "std": 3663.3, "min": 2473, "max": 21537},
+    "waves_cleared": {"mean": 13.08, "std": 2.23},
+    "pizzas": {"mean": 252.98, "std": 48.4},
+    "deaths": {"mean": 9.1, "std": 2.1},
+    "game_over": {"mean": 0.075},
+    "alive_at_cutoff": "37 / 40"
+  }
+}

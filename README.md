@@ -53,3 +53,12 @@ Voir fichier "credits.txt" pour les crédits de musique et d'effets sonores.
 ## Intelligence artificielle (branche `reinforcementLearning`)
 
 Un moteur sans affichage identique au jeu, sa version PyTorch pour l'entraînement sur GPU, un agent PPO, l'évaluation et un mode spectateur dans le vrai jeu : voir [doc/rl.md](doc/rl.md).
+
+Un agent entraîné est fourni (`models/bongo-v1`) : 18 321 points et 13 vagues validées par partie de 21 minutes (40 graines inédites). Pour le regarder jouer dans le vrai jeu :
+
+```powershell
+uv sync --extra train
+uv run python -m rl.watch --player models/bongo-v1/model.pt --speed 2
+```
+
+Détails : [models/bongo-v1/README.md](models/bongo-v1/README.md), [doc/rl.md](doc/rl.md) et le rapport complet [presentation/Rapport-CuistoBongo-IA.pdf](presentation/Rapport-CuistoBongo-IA.pdf).

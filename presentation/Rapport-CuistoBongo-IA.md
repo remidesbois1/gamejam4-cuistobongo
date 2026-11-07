@@ -439,11 +439,11 @@ uv sync --extra train
 uv run pytest -q                      # parité jeu/headless/torch (~2 min)
 
 # Regarder le modèle final dans le vrai jeu (fenêtre, sons) :
-uv run python -m rl.watch --player runs/pod-checkpoints/step-1.45B.pt --speed 2
+uv run python -m rl.watch --player models/bongo-v1/model.pt --speed 2
 #   Espace pause · ↑/↓ vitesse ×1-×8 · N nouvelle partie · Tab déterministe/échantillonné · Échap quitter
 
 # Évaluer sur les 40 graines de test (moteur de référence, parties complètes) :
-uv run python -m rl.evaluate --player runs/pod-checkpoints/step-1.45B.pt --games 40 --seed 700000 --limit 12600
+uv run python -m rl.evaluate --player models/bongo-v1/model.pt --games 40 --seed 700000 --limit 12600
 uv run python -m rl.evaluate --player scripted --games 40 --seed 700000 --limit 12600
 uv run python -m rl.evaluate --player random --games 40 --seed 700000 --limit 12600
 
@@ -453,7 +453,7 @@ uv run python -m rl.parity --seeds 1 2 3 --decisions 20000
 # Réentraîner sur GPU (RunPod A100, ~9 h pour 1,45 Md de décisions) :
 uv run python -m rl.train --output runs/bongo-v1 --envs 32768 --n-steps 16 --timesteps 1450000000 --seed 1
 # Reprendre depuis un checkpoint (réseau, optimiseur, normalisations, compteur) :
-uv run python -m rl.train --output runs/bongo-v1 --resume runs/bongo-v1/checkpoints/step_1450180608.pt --timesteps 2000000000
+uv run python -m rl.train --output runs/bongo-v2 --resume models/bongo-v1/model.pt --timesteps 2000000000
 ```
 
 ## Annexe B — Glossaire
